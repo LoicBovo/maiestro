@@ -5,6 +5,14 @@ import { Daemon } from './daemon/daemon'
 import { listProjectPRs } from './daemon/prs'
 import type { SpawnOptions } from './daemon/types'
 
+const LOGO_PATH = join(__dirname, '../../src/assets/logo.png')
+
+// In dev the app runs inside the stock Electron.app bundle, whose default
+// name and icon are Electron's. Override the app name (drives the default
+// application menu) and the macOS Dock icon at runtime; the BrowserWindow
+// `icon` option below covers Linux/Windows.
+app.setName('Maiestro')
+
 let win: BrowserWindow | null = null
 let daemon: Daemon | null = null
 
@@ -21,7 +29,7 @@ function createWindow(): void {
     minWidth: 1080,
     minHeight: 600,
     title: 'Maiestro',
-    icon: join(__dirname, '../../src/assets/logo.png'),
+    icon: LOGO_PATH,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
     },
@@ -83,6 +91,9 @@ function registerIpc(d: Daemon): void {
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(LOGO_PATH)
+  }
   daemon = new Daemon({
     dataDir: process.env.MAIESTRO_HOME ?? join(homedir(), '.maiestro'),
     notify,
