@@ -6,6 +6,7 @@
   import FilterBar from './lib/components/FilterBar.svelte'
   import PullRequestsPane from './lib/components/PullRequestsPane.svelte'
   import SpawnDialog from './lib/components/SpawnDialog.svelte'
+  import logo from './assets/logo.png'
   import {
     agents,
     createProject,
@@ -79,7 +80,10 @@
 <div class="app">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1>Maiestro</h1>
+      <div class="app-title">
+        <img class="app-logo" src={logo} alt="Maiestro logo" />
+        <h1>Maiestro</h1>
+      </div>
       <button class="new-btn" on:click={() => (showSpawn = true)}>+ New agent</button>
     </div>
     <div class="projects">

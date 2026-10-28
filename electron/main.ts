@@ -21,6 +21,7 @@ function createWindow(): void {
     minWidth: 1080,
     minHeight: 600,
     title: 'Maiestro',
+    icon: join(__dirname, '../../src/assets/logo.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
     },
