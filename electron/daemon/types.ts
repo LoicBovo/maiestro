@@ -21,6 +21,8 @@ export interface Agent {
   id: string
   tool: AgentTool
   task: string
+  /** user-given label; null means the agent is only identified by its task */
+  name: string | null
   cwd: string
   /** git branch of cwd at spawn time; null when cwd is not a git repo */
   branch: string | null
@@ -61,6 +63,8 @@ export interface AgentEvent {
 export interface SpawnOptions {
   tool: AgentTool
   task: string
+  /** optional user-given label for the agent */
+  name?: string
   cwd: string
   /** null or omitted: open the agent solo (no project) */
   projectId?: string | null

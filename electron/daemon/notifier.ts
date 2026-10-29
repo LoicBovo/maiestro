@@ -7,6 +7,11 @@ function shortTask(agent: Agent): string {
   return t
 }
 
+/** Identifies the agent in a notification: the user-given name if any. */
+function label(agent: Agent): string {
+  return '[' + agent.tool + '] ' + (agent.name ?? shortTask(agent))
+}
+
 /**
  * Turns agent status transitions into OS notifications.
  * The actual delivery mechanism (Electron Notification, osascript, console)
@@ -17,17 +22,17 @@ export class Notifier {
 
   onStatus(agent: Agent, from: string, to: string): void {
     if (from === to) return
-    const label = '[' + agent.tool + '] ' + shortTask(agent)
+    const tag = label(agent)
     const project = this.projectName(agent.projectId) ?? 'solo'
     switch (to) {
       case 'blocked':
-        this.notify('Agent blocked — ' + project, label + ' needs a decision')
+        this.notify('Agent blocked — ' + project, tag + ' needs a decision')
         break
       case 'done':
-        this.notify('Agent done — ' + project, label)
+        this.notify('Agent done — ' + project, tag)
         break
       case 'error':
-        this.notify('Agent error — ' + project, label + (agent.lastMessage ? ': ' + agent.lastMessage.slice(0, 120) : ''))
+        this.notify('Agent error — ' + project, tag + (agent.lastMessage ? ': ' + agent.lastMessage.slice(0, 120) : ''))
         break
       default:
         break

@@ -66,6 +66,11 @@ export async function removeAgent(id: string): Promise<void> {
   if (get(selectedId) === id) selectedId.set(null)
 }
 
+/** Renames an agent; the agents store refreshes via the agents:changed push. */
+export async function renameAgent(id: string, name: string): Promise<void> {
+  await api.renameAgent(id, name)
+}
+
 export async function createProject(name: string, dirs: string[]): Promise<void> {
   const project = await api.createProject(name, dirs)
   projects.update((list) => [...list, project])
