@@ -21,13 +21,17 @@ async function main(): Promise<void> {
 
   const events = ['SessionStart', 'UserPromptSubmit', 'Notification', 'PostToolUse', 'Stop']
   const settings = JSON.stringify({
+    permissions: { ask: ['Bash'] },
     hooks: Object.fromEntries(
       events.map((ev) => [ev, [{ hooks: [{ type: 'command', command: hookCmd(hooksFile) }] }]]),
     ),
   })
   console.log('settings arg length: ' + settings.length)
 
-  const term = pty.spawn('/Users/loicbovo/.local/bin/claude', ['--settings', settings, 'Reply with exactly: OK'], {
+  const term = pty.spawn(
+    '/Users/loicbovo/.local/bin/claude',
+    ['--permission-mode', 'manual', '--settings', settings, 'Run the shell command `echo maiestro-probe` and report its output.'],
+    {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
@@ -37,12 +41,18 @@ async function main(): Promise<void> {
 
   let out = ''
   let trusted = false
+  let approved = false
   term.onData((c) => {
     out += c
     if (!trusted && out.includes('trust this folder')) {
       trusted = true
       setTimeout(() => term.write('\u001b[B'), 300) // select "Yes, I trust this folder"
       setTimeout(() => term.write('\r'), 600)
+    }
+    // manual permission mode: answer the "do you want to proceed" prompt
+    if (trusted && !approved && out.includes('proceed')) {
+      approved = true
+      setTimeout(() => term.write('\r'), 500)
     }
   })
 
