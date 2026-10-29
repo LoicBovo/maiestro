@@ -137,6 +137,15 @@ export class Server {
       sendJson(res, 200, { ok: true })
       return
     }
+    if (method === 'POST' && path === '/internal/agent-hook') {
+      // called by the hooks of a terminal-mode Claude Code agent; the body is
+      // the hook's stdin payload (hook_event_name, session_id, message, ...)
+      const agentId = url.searchParams.get('agentId') ?? ''
+      const body = await readBody(req)
+      this.daemon.handleAgentHook(agentId, body)
+      sendJson(res, 200, { ok: true })
+      return
+    }
     if (method === 'POST' && path === '/internal/permission-request') {
       // called by the MCP shim; held open until the user decides
       const body = await readBody(req)

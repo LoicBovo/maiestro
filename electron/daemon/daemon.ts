@@ -1,7 +1,9 @@
 import { randomBytes, randomUUID } from 'node:crypto'
+import { execFile } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 import { startClaudeAgent, type AdapterContext } from './adapters/claude'
 import { startVibeAgent } from './adapters/vibe'
 import { startPtyAgent, type PtyProcess } from './adapters/pty'
@@ -27,6 +29,20 @@ const DEFAULT_PORT = 49377
 
 /** Scrollback kept per embedded-terminal agent (chars). */
 const TERMINAL_BUFFER_MAX = 256_000
+
+/** Current git branch of a directory, or null when it is not a git repo. */
+async function gitBranch(cwd: string): Promise<string | null> {
+  try {
+    const { stdout } = await promisify(execFile)(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      { cwd, timeout: 2000 },
+    )
+    return stdout.trim() || null
+  } catch {
+    return null
+  }
+}
 
 /** An embedded terminal (PTY) attached to a terminal-mode agent. */
 interface TerminalSession {
@@ -121,11 +137,13 @@ export class Daemon {
     if (!opts.task?.trim()) throw new Error('task is required')
     if (opts.tool !== 'claude' && opts.tool !== 'vibe') throw new Error('unknown tool: ' + opts.tool)
     const project = opts.projectId ? this.registry.getProject(opts.projectId) : undefined
+    const cwd = opts.cwd?.trim() || project?.dirs[0] || homedir()
     const agent: Agent = {
       id: randomUUID(),
       tool: opts.tool,
       task: opts.task,
-      cwd: opts.cwd?.trim() || project?.dirs[0] || homedir(),
+      cwd,
+      branch: await gitBranch(cwd),
       projectId: project?.id ?? null,
       status: 'running',
       pid: null,
@@ -188,6 +206,55 @@ export class Daemon {
     const ok = this.registry.decidePermission(toolUseId, decision, message)
     if (!ok) throw new Error('no pending permission with id ' + toolUseId)
     this.emit(agentId, 'log', 'Permission ' + decision + ' (' + toolUseId.slice(0, 12) + '...)')
+  }
+
+  /**
+   * A lifecycle event from a terminal-mode Claude Code agent's hooks (the TUI
+   * emits no status markers of its own). Maps hook events to the registry's
+   * turn-level status: prompt -> running, permission needed -> blocked, tool
+   * ran -> running again, turn complete -> done.
+   */
+  handleAgentHook(agentId: string, payload: unknown): void {
+    const agent = this.registry.getAgent(agentId)
+    if (!agent || typeof payload !== 'object' || payload === null) return
+    const p = payload as Record<string, unknown>
+    const event = typeof p.hook_event_name === 'string' ? p.hook_event_name : ''
+    switch (event) {
+      case 'SessionStart':
+        if (typeof p.session_id === 'string') {
+          this.registry.updateAgent(agentId, { sessionId: p.session_id })
+        }
+        break
+      case 'UserPromptSubmit':
+        if (agent.status === 'done' || agent.status === 'blocked') {
+          this.emit(agentId, 'log', 'turn started')
+          this.registry.setStatus(agentId, 'running', { endedAt: null })
+        }
+        break
+      case 'Notification': {
+        const message = typeof p.message === 'string' ? p.message : ''
+        // only permission requests mean "blocked"; idle notifications don't
+        if (message.toLowerCase().includes('permission') && agent.status === 'running') {
+          this.emit(agentId, 'blocked', message, payload)
+          this.registry.setStatus(agentId, 'blocked')
+        }
+        break
+      }
+      case 'PostToolUse':
+        // a tool ran, so any permission prompt was answered in the terminal
+        if (agent.status === 'blocked') {
+          this.registry.setStatus(agentId, 'running', { pendingPermission: null })
+        }
+        break
+      case 'Stop':
+        if (agent.status === 'running' || agent.status === 'blocked') {
+          this.emit(agentId, 'done', 'turn complete')
+          this.registry.setStatus(agentId, 'done')
+        }
+        break
+      default:
+        break
+    }
   }
 
   /** Stops the agent if needed and removes it (and its events) from the console. */
