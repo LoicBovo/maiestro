@@ -1,4 +1,4 @@
-import { accessSync, chmodSync, constants, existsSync, statSync } from 'node:fs'
+import { accessSync, chmodSync, constants, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import * as pty from 'node-pty'
@@ -77,6 +77,32 @@ const OSC_TAIL = 128
 /** Minimum status-mirroring interval (ms) — keeps registry/IPC writes bounded. */
 const MIRROR_INTERVAL_MS = 500
 
+/** Hook events whose payload the daemon maps to status transitions. */
+const CLAUDE_HOOK_EVENTS = ['SessionStart', 'UserPromptSubmit', 'Notification', 'PostToolUse', 'Stop']
+
+/**
+ * Claude Code's TUI emits no machine-readable state markers (unlike vibe's
+ * OSC 7501), so terminal-mode status comes from its hooks: a settings file
+ * with hooks that POST their stdin payload to the daemon's
+ * /internal/agent-hook endpoint. Written per spawn, removed when the PTY exits.
+ */
+function writeClaudeHookSettings(agentId: string, ctx: AdapterContext): string {
+  const command =
+    'curl -s -o /dev/null -X POST' +
+    " -H 'Authorization: Bearer " + ctx.daemonToken + "'" +
+    " -H 'Content-Type: application/json'" +
+    " --data-binary @- '" + ctx.daemonUrl + '/internal/agent-hook?agentId=' + agentId + "' || true"
+  const settings = {
+    hooks: Object.fromEntries(
+      CLAUDE_HOOK_EVENTS.map((ev) => [ev, [{ hooks: [{ type: 'command', command }] }]]),
+    ),
+  }
+  mkdirSync(join(ctx.dataDir, 'bin'), { recursive: true })
+  const file = join(ctx.dataDir, 'bin', 'claude-hooks-' + agentId + '.json')
+  writeFileSync(file, JSON.stringify(settings))
+  return file
+}
+
 export interface PtyHandlers {
   /** raw terminal output (stdout+stderr of the CLI) for the GUI */
   onData: (chunk: string) => void
@@ -138,7 +164,14 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
   ensureSpawnHelperExecutable()
   const policy = opts.options?.vibeAgent ?? 'smart-approve'
   const cli = resolveCli(agent.tool)
-  const args = agent.tool === 'claude' ? [opts.task] : [opts.task, '--agent', policy]
+  let hookSettingsFile: string | null = null
+  let args: string[]
+  if (agent.tool === 'claude') {
+    hookSettingsFile = writeClaudeHookSettings(agent.id, ctx)
+    args = [opts.task, '--settings', hookSettingsFile]
+  } else {
+    args = [opts.task, '--agent', policy]
+  }
 
   const term = pty.spawn(cli, args, {
     name: 'xterm-256color',
@@ -210,6 +243,7 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
     handleStateMarkers(chunk)
   })
   term.onExit(({ exitCode }) => {
+    if (hookSettingsFile) rmSync(hookSettingsFile, { force: true })
     const a = ctx.registry.getAgent(agent.id)
     if (!a || a.status === 'stopped') return
     if (exitCode === 0) {
