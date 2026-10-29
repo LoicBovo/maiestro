@@ -11,6 +11,8 @@ const api = {
   spawnAgent: (opts: SpawnOptions): Promise<Agent> => ipcRenderer.invoke('agents:spawn', opts),
   stopAgent: (id: string): Promise<void> => ipcRenderer.invoke('agents:stop', id),
   removeAgent: (id: string): Promise<void> => ipcRenderer.invoke('agents:remove', id),
+  renameAgent: (id: string, name: string): Promise<Agent> =>
+    ipcRenderer.invoke('agents:rename', id, name),
   relaunchAgent: (id: string, options?: SpawnOptions['options']): Promise<Agent> =>
     ipcRenderer.invoke('agents:relaunch', id, options),
   decidePermission: (

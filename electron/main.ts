@@ -67,6 +67,7 @@ function registerIpc(d: Daemon): void {
   )
   ipcMain.handle('agents:events', (_e, id: string) => d.getEvents(id))
   ipcMain.handle('agents:remove', (_e, id: string) => d.removeAgent(id))
+  ipcMain.handle('agents:rename', (_e, id: string, name: string) => d.renameAgent(id, name))
   ipcMain.handle('terminal:attach', (_e, id: string) => d.attachTerminal(id))
   ipcMain.handle('terminal:write', (_e, id: string, data: string) => d.writeTerminal(id, data))
   ipcMain.handle('terminal:resize', (_e, id: string, cols: number, rows: number) =>

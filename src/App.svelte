@@ -39,7 +39,7 @@
 
   function onCloseAgent(agent: typeof $agents[number]): void {
     const running = agent.status === 'running' || agent.status === 'blocked'
-    if (running && !confirm('Stop and close this agent?\n"' + agent.task.slice(0, 80) + '"')) return
+    if (running && !confirm('Stop and close this agent?\n"' + (agent.name ?? agent.task.slice(0, 80)) + '"')) return
     void removeAgent(agent.id)
   }
 

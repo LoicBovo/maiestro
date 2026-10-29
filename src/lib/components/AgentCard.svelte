@@ -29,6 +29,9 @@
     <StatusBadge status={agent.status} />
     <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
   </div>
+  {#if agent.name}
+    <div class="agent-name" title={agent.name}>{agent.name}</div>
+  {/if}
   <div class="task-text" title={agent.task}>{shortTask}</div>
   {#if agent.lastMessage}
     <div class="last-msg">{agent.lastMessage}</div>

@@ -12,6 +12,7 @@ interface MaiestroApi {
   spawnAgent(opts: SpawnOptions): Promise<Agent>
   stopAgent(id: string): Promise<void>
   removeAgent(id: string): Promise<void>
+  renameAgent(id: string, name: string): Promise<Agent>
   relaunchAgent(id: string, options?: SpawnOptions['options']): Promise<Agent>
   decidePermission(
     agentId: string,

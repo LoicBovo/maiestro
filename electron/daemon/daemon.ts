@@ -27,6 +27,14 @@ export interface DaemonOptions {
 
 const DEFAULT_PORT = 49377
 
+/** Longest agent name kept; longer input is trimmed, not rejected. */
+const NAME_MAX = 80
+
+function cleanName(name: string | undefined | null): string | null {
+  const clean = (name ?? '').trim().slice(0, NAME_MAX)
+  return clean || null
+}
+
 /** Scrollback kept per embedded-terminal agent (chars). */
 const TERMINAL_BUFFER_MAX = 256_000
 
@@ -142,6 +150,7 @@ export class Daemon {
       id: randomUUID(),
       tool: opts.tool,
       task: opts.task,
+      name: cleanName(opts.name),
       cwd,
       branch: await gitBranch(cwd),
       projectId: project?.id ?? null,
@@ -196,10 +205,22 @@ export class Daemon {
     return this.spawnAgent({
       tool: old.tool,
       task: old.task,
+      name: old.name ?? undefined,
       cwd: old.cwd,
       projectId: old.projectId,
       options: { ...old.options, ...optionsOverride },
     })
+  }
+
+  /** Sets or clears the user-given name of an agent. */
+  renameAgent(id: string, name: string): Agent {
+    const agent = this.registry.getAgent(id)
+    if (!agent) throw new Error('agent not found')
+    const clean = cleanName(name)
+    if (clean === agent.name) return agent
+    this.registry.updateAgent(id, { name: clean })
+    this.emit(id, 'log', clean ? 'Renamed to ' + clean : 'Name cleared')
+    return this.registry.getAgent(id)!
   }
 
   decidePermission(agentId: string, toolUseId: string, decision: 'allow' | 'deny', message?: string): void {

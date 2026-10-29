@@ -16,6 +16,9 @@
   let denyMessage = ''
   let busy = ''
   let lastAgentId = ''
+  let renaming = false
+  let renameValue = ''
+  let renameEl: HTMLInputElement
 
   $: projectName =
     agent.projectId == null
@@ -29,6 +32,7 @@
     policy = agent.options?.vibeAgent ?? 'smart-approve'
     maxTurns = agent.options?.maxTurns ?? 25
     denyMessage = ''
+    renaming = false
   }
 
   // keep the log pinned to the bottom unless the user scrolled up to read
@@ -98,11 +102,54 @@
       busy = ''
     }
   }
+
+  function startRename(): void {
+    renameValue = agent.name ?? ''
+    renaming = true
+  }
+
+  function autofocus(el: HTMLInputElement): void {
+    el.focus()
+    el.select()
+  }
+
+  async function saveRename(): Promise<void> {
+    const value = renameValue.trim()
+    renaming = false
+    if (value === (agent.name ?? '')) return
+    try {
+      await api.renameAgent(agent.id, value)
+    } catch {
+      // the agent was removed mid-edit; the agents:changed push covers it
+    }
+  }
 </script>
 
 <div class="detail-inner">
   <div class="detail-header">
-    <h2 title={agent.task}>{agent.task}</h2>
+    {#if renaming}
+      <form class="rename-form" on:submit|preventDefault={saveRename}>
+        <input
+          bind:this={renameEl}
+          bind:value={renameValue}
+          maxlength="80"
+          placeholder="Agent name"
+          use:autofocus
+          on:keydown={(e) => e.key === 'Escape' && (renaming = false)}
+        />
+        <button type="submit" class="btn">Save</button>
+        <button type="button" class="btn" on:click={() => (renaming = false)}>Cancel</button>
+      </form>
+    {:else}
+      <h2 title={agent.task}>{agent.name ?? agent.task}</h2>
+      <button
+        class="btn rename-btn"
+        title={agent.name ? 'Rename agent' : 'Give this agent a name'}
+        on:click={startRename}
+      >
+        {agent.name ? 'Rename' : 'Name'}
+      </button>
+    {/if}
     <StatusBadge status={agent.status} />
   </div>
 

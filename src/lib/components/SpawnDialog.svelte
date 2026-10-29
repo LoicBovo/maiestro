@@ -12,6 +12,7 @@
 
   let tool: AgentTool = 'claude'
   let projectId = initialProjectId
+  let name = ''
   let task = ''
   let cwd = ''
   let vibeAgent = 'smart-approve'
@@ -51,6 +52,7 @@
       const agent = await api.spawnAgent({
         tool,
         task: task.trim(),
+        name: name.trim() || undefined,
         cwd: cwd.trim(),
         projectId: projectId || null,
         options: {
@@ -94,6 +96,10 @@
             <option value={p.id}>{p.name}</option>
           {/each}
         </select>
+      </label>
+      <label>
+        Name
+        <input bind:value={name} maxlength="80" placeholder="Optional — defaults to the task" />
       </label>
       <label>
         Task

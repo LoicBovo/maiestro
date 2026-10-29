@@ -41,6 +41,8 @@ export class Registry extends EventEmitter {
       if (a.projectId == null) a.projectId = null
       // pre-branch persisted agents have no branch recorded
       if (a.branch === undefined) a.branch = null
+      // pre-name entries: normalize a missing name to null
+      if (a.name == null) a.name = null
       // child processes don't survive a daemon restart
       if (a.status === 'running' || a.status === 'blocked') {
         a.status = 'stopped'
