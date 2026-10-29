@@ -208,6 +208,55 @@ export class Daemon {
     this.emit(agentId, 'log', 'Permission ' + decision + ' (' + toolUseId.slice(0, 12) + '...)')
   }
 
+  /**
+   * A lifecycle event from a terminal-mode Claude Code agent's hooks (the TUI
+   * emits no status markers of its own). Maps hook events to the registry's
+   * turn-level status: prompt -> running, permission needed -> blocked, tool
+   * ran -> running again, turn complete -> done.
+   */
+  handleAgentHook(agentId: string, payload: unknown): void {
+    const agent = this.registry.getAgent(agentId)
+    if (!agent || typeof payload !== 'object' || payload === null) return
+    const p = payload as Record<string, unknown>
+    const event = typeof p.hook_event_name === 'string' ? p.hook_event_name : ''
+    switch (event) {
+      case 'SessionStart':
+        if (typeof p.session_id === 'string') {
+          this.registry.updateAgent(agentId, { sessionId: p.session_id })
+        }
+        break
+      case 'UserPromptSubmit':
+        if (agent.status === 'done' || agent.status === 'blocked') {
+          this.emit(agentId, 'log', 'turn started')
+          this.registry.setStatus(agentId, 'running', { endedAt: null })
+        }
+        break
+      case 'Notification': {
+        const message = typeof p.message === 'string' ? p.message : ''
+        // only permission requests mean "blocked"; idle notifications don't
+        if (message.toLowerCase().includes('permission') && agent.status === 'running') {
+          this.emit(agentId, 'blocked', message, payload)
+          this.registry.setStatus(agentId, 'blocked')
+        }
+        break
+      }
+      case 'PostToolUse':
+        // a tool ran, so any permission prompt was answered in the terminal
+        if (agent.status === 'blocked') {
+          this.registry.setStatus(agentId, 'running', { pendingPermission: null })
+        }
+        break
+      case 'Stop':
+        if (agent.status === 'running' || agent.status === 'blocked') {
+          this.emit(agentId, 'done', 'turn complete')
+          this.registry.setStatus(agentId, 'done')
+        }
+        break
+      default:
+        break
+    }
+  }
+
   /** Stops the agent if needed and removes it (and its events) from the console. */
   removeAgent(id: string): void {
     const agent = this.registry.getAgent(id)
