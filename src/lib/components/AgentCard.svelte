@@ -10,8 +10,9 @@
   const dispatch = createEventDispatcher<{ select: void; remove: void }>()
 
   $: shortTask = agent.task.length > 90 ? agent.task.slice(0, 87) + '…' : agent.task
-  $: projectName =
-    agent.projectId == null ? 'solo' : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo'
+  $: tileLabel =
+    agent.branch ??
+    (agent.projectId == null ? 'solo' : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo')
 </script>
 
 <div
@@ -24,7 +25,7 @@
 >
   <div class="card-top">
     <span class="tool-tag tool-{agent.tool}">{agent.tool}</span>
-    <span class="project-tag">{projectName}</span>
+    <span class="project-tag" title={agent.cwd}>{tileLabel}</span>
     <StatusBadge status={agent.status} />
     <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
   </div>

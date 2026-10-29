@@ -22,6 +22,8 @@ export interface Agent {
   tool: AgentTool
   task: string
   cwd: string
+  /** git branch of cwd at spawn time; null when cwd is not a git repo */
+  branch: string | null
   /** the project this agent belongs to; null means the agent is open solo */
   projectId: string | null
   status: AgentStatus

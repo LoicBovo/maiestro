@@ -1,7 +1,9 @@
 import { randomBytes, randomUUID } from 'node:crypto'
+import { execFile } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 import { startClaudeAgent, type AdapterContext } from './adapters/claude'
 import { startVibeAgent } from './adapters/vibe'
 import { startPtyAgent, type PtyProcess } from './adapters/pty'
@@ -27,6 +29,20 @@ const DEFAULT_PORT = 49377
 
 /** Scrollback kept per embedded-terminal agent (chars). */
 const TERMINAL_BUFFER_MAX = 256_000
+
+/** Current git branch of a directory, or null when it is not a git repo. */
+async function gitBranch(cwd: string): Promise<string | null> {
+  try {
+    const { stdout } = await promisify(execFile)(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      { cwd, timeout: 2000 },
+    )
+    return stdout.trim() || null
+  } catch {
+    return null
+  }
+}
 
 /** An embedded terminal (PTY) attached to a terminal-mode agent. */
 interface TerminalSession {
@@ -121,11 +137,13 @@ export class Daemon {
     if (!opts.task?.trim()) throw new Error('task is required')
     if (opts.tool !== 'claude' && opts.tool !== 'vibe') throw new Error('unknown tool: ' + opts.tool)
     const project = opts.projectId ? this.registry.getProject(opts.projectId) : undefined
+    const cwd = opts.cwd?.trim() || project?.dirs[0] || homedir()
     const agent: Agent = {
       id: randomUUID(),
       tool: opts.tool,
       task: opts.task,
-      cwd: opts.cwd?.trim() || project?.dirs[0] || homedir(),
+      cwd,
+      branch: await gitBranch(cwd),
       projectId: project?.id ?? null,
       status: 'running',
       pid: null,
