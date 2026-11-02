@@ -29,7 +29,6 @@ interface MaiestroApi {
   deleteProject(id: string): Promise<void>
   listProjectPRs(projectId: string): Promise<ProjectPRs>
   openExternal(url: string): Promise<void>
-  setPrsPane(open: boolean): Promise<void>
   pickDirectory(): Promise<string | null>
   onAgentsChanged(cb: (agents: Agent[]) => void): () => void
   onAgentEvent(cb: (ev: AgentEvent) => void): () => void

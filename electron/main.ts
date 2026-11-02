@@ -21,11 +21,6 @@ app.setName('Maiestro')
 let win: BrowserWindow | null = null
 let daemon: Daemon | null = null
 
-// Width the window gains/loses when the Open PRs pane opens/closes (open pane
-// 300px vs collapsed rail 30px — must match the .app grid in src/app.css).
-const PRS_PANE_DELTA = 270
-let prsPaneOpen = true
-
 function notify(title: string, body: string): void {
   const n = new Notification({ title, body })
   n.on('click', () => showWindow())
@@ -99,16 +94,6 @@ function registerIpc(d: Daemon): void {
   ipcMain.handle('shell:open-external', (_e, url: string) => {
     const u = new URL(url)
     if (u.protocol === 'http:' || u.protocol === 'https:') void shell.openExternal(url)
-  })
-  // Resizes the window when the Open PRs pane opens/closes. The state lives in
-  // the main process so a renderer reload re-syncing the same state is a no-op.
-  ipcMain.handle('window:prs-pane', (_e, open: boolean) => {
-    if (!win || open === prsPaneOpen) return
-    prsPaneOpen = open
-    const [width, height] = win.getSize()
-    const [minWidth] = win.getMinimumSize()
-    const target = Math.max(minWidth, width + (open ? PRS_PANE_DELTA : -PRS_PANE_DELTA))
-    win.setSize(target, height)
   })
   ipcMain.handle('dialog:pick-directory', async () => {
     const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })

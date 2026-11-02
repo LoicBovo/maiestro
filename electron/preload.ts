@@ -35,7 +35,6 @@ const api = {
   listProjectPRs: (projectId: string): Promise<ProjectPRs> =>
     ipcRenderer.invoke('projects:open-prs', projectId),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
-  setPrsPane: (open: boolean): Promise<void> => ipcRenderer.invoke('window:prs-pane', open),
   pickDirectory: (): Promise<string | null> => ipcRenderer.invoke('dialog:pick-directory'),
   onAgentsChanged: (cb: (agents: Agent[]) => void): (() => void) => {
     const listener = (_e: unknown, agents: Agent[]) => cb(agents)

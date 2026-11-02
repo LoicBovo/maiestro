@@ -18,7 +18,7 @@ const PRS_PANE_KEY = 'maiestro:prsPaneOpen'
 /** Whether the Open PRs pane is expanded (persisted across launches). */
 export const prsPaneOpen = writable(true)
 
-/** Opens/closes the Open PRs pane and resizes the window accordingly. */
+/** Opens/closes the Open PRs pane; the agent pane shrinks inside the window. */
 export function togglePrsPane(open: boolean): void {
   prsPaneOpen.set(open)
   try {
@@ -26,10 +26,9 @@ export function togglePrsPane(open: boolean): void {
   } catch {
     // storage unavailable — keep the in-memory state only
   }
-  void api.setPrsPane(open)
 }
 
-/** Restores the persisted pane state and syncs the window size to match. */
+/** Restores the persisted pane state. */
 export function restorePrsPane(): void {
   let saved: string | null = null
   try {
@@ -38,7 +37,6 @@ export function restorePrsPane(): void {
     // ignore — fall back to open
   }
   prsPaneOpen.set(saved !== 'false')
-  void api.setPrsPane(saved !== 'false')
 }
 
 export const selectedAgent = derived(
