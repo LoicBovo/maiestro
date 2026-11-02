@@ -18,6 +18,7 @@
     selectAgent,
     selectedAgent,
     selectedId,
+    setProjectFilter,
     visibleAgents,
   } from './lib/state'
 
@@ -89,12 +90,12 @@
     <div class="projects">
       <div class="projects-label">Projects</div>
       <div class="project-item" class:active={$projectFilter === 'all'}>
-        <button class="project-select" on:click={() => projectFilter.set('all')}>
+        <button class="project-select" on:click={() => setProjectFilter('all')}>
           All agents <span class="project-count">{$agents.length}</span>
         </button>
       </div>
       <div class="project-item" class:active={$projectFilter === 'solo'}>
-        <button class="project-select" on:click={() => projectFilter.set('solo')}>
+        <button class="project-select" on:click={() => setProjectFilter('solo')}>
           Solo <span class="project-count">{countFor('solo')}</span>
         </button>
       </div>
@@ -103,7 +104,7 @@
           <button
             class="project-select"
             title={p.dirs.join('\n')}
-            on:click={() => projectFilter.set(p.id)}
+            on:click={() => setProjectFilter(p.id)}
           >
             {p.name} <span class="project-count">{countFor(p.id)}</span>
           </button>
