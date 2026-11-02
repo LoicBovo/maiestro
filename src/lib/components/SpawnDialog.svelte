@@ -15,7 +15,7 @@
   let name = ''
   let task = ''
   let cwd = ''
-  let vibeAgent = 'smart-approve'
+  let vibeAgent = 'auto-approve'
   let maxTurns = 25
   let terminal = true
   let submitting = false

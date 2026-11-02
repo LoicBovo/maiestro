@@ -75,7 +75,7 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext, policy: str
  * which we report as `blocked`. Returns the running process.
  */
 export function startVibeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext): LineProcess {
-  const policy = opts.options?.vibeAgent ?? 'smart-approve'
+  const policy = opts.options?.vibeAgent ?? 'auto-approve'
   const args = [
     '-p', opts.task,
     '--output', 'streaming',

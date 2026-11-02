@@ -162,7 +162,7 @@ class PtyProc implements PtyProcess {
  */
 export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext, handlers: PtyHandlers): PtyProcess {
   ensureSpawnHelperExecutable()
-  const policy = opts.options?.vibeAgent ?? 'smart-approve'
+  const policy = opts.options?.vibeAgent ?? 'auto-approve'
   const cli = resolveCli(agent.tool)
   let hookSettingsFile: string | null = null
   let args: string[]
