@@ -13,16 +13,14 @@
   let tool: AgentTool = 'claude'
   let projectId = initialProjectId
   let name = ''
-  let task = ''
   let cwd = ''
   let vibeAgent = 'auto-approve'
   let maxTurns = 25
-  let terminal = true
   let submitting = false
   let error = ''
-  let taskEl: HTMLTextAreaElement
+  let nameEl: HTMLInputElement
 
-  onMount(() => taskEl?.focus())
+  onMount(() => nameEl?.focus())
 
   let lastProjectId = ''
   $: selectedProject = $projects.find((p) => p.id === projectId) ?? null
@@ -42,21 +40,16 @@
   }
 
   async function submit(): Promise<void> {
-    if (!task.trim()) {
-      error = 'Task is required'
-      return
-    }
     submitting = true
     error = ''
     try {
       const agent = await api.spawnAgent({
         tool,
-        task: task.trim(),
         name: name.trim() || undefined,
         cwd: cwd.trim(),
         projectId: projectId || null,
         options: {
-          mode: terminal ? 'terminal' : 'headless',
+          mode: 'terminal',
           ...(tool === 'vibe' ? { vibeAgent, maxTurns } : {}),
         },
       })
@@ -99,11 +92,7 @@
       </label>
       <label>
         Name
-        <input bind:value={name} maxlength="80" placeholder="Optional — defaults to the task" />
-      </label>
-      <label>
-        Task
-        <textarea bind:this={taskEl} bind:value={task} rows="4" placeholder="What should the agent do?"></textarea>
+        <input bind:this={nameEl} bind:value={name} maxlength="80" placeholder="Optional — auto-generated if empty" />
       </label>
       <label>
         Working directory
@@ -128,14 +117,7 @@
           <input type="number" bind:value={maxTurns} min="1" max="200" />
         </label>
       {/if}
-      <label>
-        Run in an embedded terminal
-        <select bind:value={terminal}>
-          <option value={true}>Yes</option>
-          <option value={false}>No</option>
-        </select>
-        <small>The agent's live CLI appears in its detail view — answer its questions right there</small>
-      </label>
+      <small>The agent's live CLI appears in its detail view — type the task and answer its questions right there</small>
       {#if error}
         <div class="error">{error}</div>
       {/if}

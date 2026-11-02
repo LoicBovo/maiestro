@@ -59,7 +59,8 @@ export interface AgentEvent {
 
 export interface SpawnOptions {
   tool: AgentTool
-  task: string
+  /** prompt sent to a headless agent; terminal agents start without one */
+  task?: string
   /** optional user-given label for the agent */
   name?: string
   cwd: string

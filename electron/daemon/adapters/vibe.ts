@@ -84,7 +84,7 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext, policy: str
  */
 export function startVibeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext): LineProcess {
   const policy = opts.options?.vibeAgent ?? 'auto-approve'
-  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : opts.task
+  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : (opts.task ?? '')
   const args = [
     ...(opts.resumeSessionId ? ['--resume', opts.resumeSessionId] : []),
     '-p', prompt,

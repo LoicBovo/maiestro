@@ -20,6 +20,7 @@ export interface Project {
 export interface Agent {
   id: string
   tool: AgentTool
+  /** prompt for headless agents; empty when the agent was started without one */
   task: string
   /** user-given label; null means the agent is only identified by its task */
   name: string | null
@@ -62,7 +63,8 @@ export interface AgentEvent {
 
 export interface SpawnOptions {
   tool: AgentTool
-  task: string
+  /** prompt sent to a headless agent; terminal agents start without one */
+  task?: string
   /** optional user-given label for the agent */
   name?: string
   cwd: string

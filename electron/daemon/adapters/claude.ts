@@ -93,7 +93,7 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext): void {
  * process.
  */
 export function startClaudeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext): LineProcess {
-  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : opts.task
+  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : (opts.task ?? '')
   const args = [
     ...(opts.resumeSessionId ? ['--resume', opts.resumeSessionId] : []),
     '-p', prompt,

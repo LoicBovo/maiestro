@@ -142,15 +142,20 @@ export class Daemon {
   }
 
   async spawnAgent(opts: SpawnOptions): Promise<Agent> {
-    if (!opts.task?.trim()) throw new Error('task is required')
     if (opts.tool !== 'claude' && opts.tool !== 'vibe') throw new Error('unknown tool: ' + opts.tool)
+    const task = opts.task?.trim() ?? ''
+    if (!task && opts.options?.mode !== 'terminal') {
+      throw new Error('task is required for headless agents')
+    }
+    const id = randomUUID()
     const project = opts.projectId ? this.registry.getProject(opts.projectId) : undefined
     const cwd = opts.cwd?.trim() || project?.dirs[0] || homedir()
     const agent: Agent = {
-      id: randomUUID(),
+      id,
       tool: opts.tool,
-      task: opts.task,
-      name: cleanName(opts.name),
+      task,
+      // no task to identify the agent by: fall back to a generated name
+      name: cleanName(opts.name) ?? (task ? null : opts.tool + ' ' + id.slice(0, 8)),
       cwd,
       branch: await gitBranch(cwd),
       projectId: project?.id ?? null,
