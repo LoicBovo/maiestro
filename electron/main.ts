@@ -35,6 +35,9 @@ function createWindow(): void {
     minHeight: 600,
     title: 'Maiestro',
     icon: LOGO_PATH,
+    backgroundColor: '#0e1014',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 14, y: 18 },
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
     },
