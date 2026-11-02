@@ -2,20 +2,44 @@
   "name": "maiestro",
   "version": "0.1.0",
   "private": true,
+  "author": "Loic Bovo",
   "description": "GUI to manage multiple coding agents (Claude Code, Mistral Vibe)",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
+    "dist": "npm run build && electron-builder --publish never",
     "daemon": "tsx electron/daemon/cli.ts",
     "smoke": "tsx electron/daemon/smoke.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "build": {
+    "appId": "dev.loic.maiestro",
+    "productName": "Maiestro",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**"
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.5",
     "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "svelte": "^5.57.3",
     "tsx": "^4.23.15",
