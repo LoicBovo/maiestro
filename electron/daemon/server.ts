@@ -70,7 +70,7 @@ export class Server {
       return
     }
 
-    const agentMatch = path.match(/^\/api\/agents\/([0-9a-f-]+)(\/(events|stop|relaunch|permission|rename))?$/)
+    const agentMatch = path.match(/^\/api\/agents\/([0-9a-f-]+)(\/(events|stop|resume|permission|rename))?$/)
     if (method === 'GET' && path === '/api/agents') {
       sendJson(res, 200, { agents: this.daemon.registry.listAgents() })
       return
@@ -99,10 +99,10 @@ export class Server {
       sendJson(res, 200, { agent: this.daemon.registry.getAgent(agentMatch[1]) })
       return
     }
-    if (agentMatch && method === 'POST' && agentMatch[3] === 'relaunch') {
+    if (agentMatch && method === 'POST' && agentMatch[3] === 'resume') {
       const body = await readBody(req)
-      const agent = await this.daemon.relaunchAgent(agentMatch[1], body?.options)
-      sendJson(res, 201, { agent })
+      const agent = await this.daemon.resumeAgent(agentMatch[1], body?.message, body?.options)
+      sendJson(res, 200, { agent })
       return
     }
     if (agentMatch && method === 'POST' && agentMatch[3] === 'rename') {

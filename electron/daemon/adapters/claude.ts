@@ -88,11 +88,15 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext): void {
 /**
  * Spawns `claude -p <task>` with stream-json output and the MCP permission
  * shim wired in, so permission requests become `blocked` states the user can
- * answer from the GUI. Returns the running process.
+ * answer from the GUI. With `resumeSessionId` set, resumes that session with
+ * a follow-up prompt instead of starting a new one. Returns the running
+ * process.
  */
 export function startClaudeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext): LineProcess {
+  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : opts.task
   const args = [
-    '-p', opts.task,
+    ...(opts.resumeSessionId ? ['--resume', opts.resumeSessionId] : []),
+    '-p', prompt,
     '--output-format', 'stream-json',
     '--verbose',
     '--permission-prompt-tool', 'mcp__maiestro__permission_decision',

@@ -13,7 +13,7 @@ interface MaiestroApi {
   stopAgent(id: string): Promise<void>
   removeAgent(id: string): Promise<void>
   renameAgent(id: string, name: string): Promise<Agent>
-  relaunchAgent(id: string, options?: SpawnOptions['options']): Promise<Agent>
+  resumeAgent(id: string, message?: string, options?: SpawnOptions['options']): Promise<Agent>
   decidePermission(
     agentId: string,
     toolUseId: string,

@@ -62,8 +62,10 @@ function registerIpc(d: Daemon): void {
   ipcMain.handle('agents:list', () => d.registry.listAgents())
   ipcMain.handle('agents:spawn', (_e, opts: SpawnOptions) => d.spawnAgent(opts))
   ipcMain.handle('agents:stop', (_e, id: string) => d.stopAgent(id))
-  ipcMain.handle('agents:relaunch', (_e, id: string, options?: SpawnOptions['options']) =>
-    d.relaunchAgent(id, options),
+  ipcMain.handle(
+    'agents:resume',
+    (_e, id: string, message?: string, options?: SpawnOptions['options']) =>
+      d.resumeAgent(id, message, options),
   )
   ipcMain.handle(
     'agents:permission',
