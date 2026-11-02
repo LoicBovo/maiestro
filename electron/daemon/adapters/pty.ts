@@ -64,12 +64,13 @@ const ANSI_RE = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1
 
 /**
  * Semantic state marker emitted by the vibe TUI per turn:
- * `ESC ] 7501 ; state=<working|done> : app=vibe : msg=<base64> ESC \`.
+ * `ESC ] 7501 ; state=<state> : app=vibe : msg=<base64> ESC \` where <state> is
+ * `working`, `done`, `error`, `blocked` or `blocked:kind=<permission|question>`.
  * The interactive CLI keeps running after a turn completes, so process exit
  * alone can't tell "agent done" from "agent waiting for the next prompt" —
  * these markers can.
  */
-const OSC_STATE_RE = /\x1b\]7501;state=(\w+):/g
+const OSC_STATE_RE = /\x1b\]7501;state=([\w]+(?::kind=\w+)?):(?=app=)/g
 
 /** Tail length kept around to match markers split across PTY chunks. */
 const OSC_TAIL = 128
@@ -220,7 +221,8 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
   }
 
   // Track turn-level state from the vibe TUI's OSC 7501 markers so a finished
-  // turn shows as `done` while the interactive CLI stays open for follow-ups.
+  // turn shows as `done` and a permission prompt / question shows as `blocked`
+  // (driving the OS notification) while the interactive CLI stays open.
   let oscTail = ''
   let lastTuiState = ''
   const handleStateMarkers = (chunk: string): void => {
@@ -232,12 +234,29 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
       lastTuiState = state
       const a = ctx.registry.getAgent(agent.id)
       if (!a || a.status === 'stopped' || a.status === 'error') continue
-      if (state === 'done' && a.status === 'running') {
-        ctx.emit(agent.id, 'done', 'turn complete')
-        ctx.registry.setStatus(agent.id, 'done')
-      } else if (state === 'working' && a.status === 'done') {
-        ctx.emit(agent.id, 'log', 'turn started')
-        ctx.registry.setStatus(agent.id, 'running', { endedAt: null })
+      if (state === 'done') {
+        if (a.status === 'running' || a.status === 'blocked') {
+          ctx.emit(agent.id, 'done', 'turn complete')
+          ctx.registry.setStatus(agent.id, 'done')
+        }
+      } else if (state.startsWith('blocked')) {
+        // the TUI is waiting for the user to answer inside the embedded
+        // terminal (approve a tool or reply to a question)
+        if (a.status === 'running' || a.status === 'done') {
+          const question = state.includes('kind=question')
+          ctx.emit(agent.id, 'blocked', question ? 'waiting for an answer' : 'waiting for a permission decision')
+          ctx.registry.setStatus(agent.id, 'blocked')
+        }
+      } else if (state === 'working') {
+        if (a.status === 'done' || a.status === 'blocked') {
+          ctx.emit(agent.id, 'log', 'turn started')
+          ctx.registry.setStatus(agent.id, 'running', { endedAt: null, pendingPermission: null })
+        }
+      } else if (state === 'error') {
+        if (a.status === 'running' || a.status === 'blocked') {
+          ctx.emit(agent.id, 'error', 'TUI reported an error')
+          ctx.registry.setStatus(agent.id, 'error')
+        }
       }
     }
   }

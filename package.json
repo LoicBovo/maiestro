@@ -10,6 +10,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "npm run build && electron-builder --publish never",
+    "postdist": "codesign --force --deep --sign - release/mac-arm64/Maiestro.app",
     "daemon": "tsx electron/daemon/cli.ts",
     "smoke": "tsx electron/daemon/smoke.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
