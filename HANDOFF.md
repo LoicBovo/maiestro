@@ -99,7 +99,7 @@ claude → agent continues.
   Events: `message` (role/content), `reasoning`, `effect` (tool executions;
   `state.status: 'failed'` + `state.error.code: 'tool_denied'` = denied),
   `callback` (approval answered; headless auto-`deny`s). Headless vibe **never
-  waits for input** — unblock = relaunch with a different `--agent` policy
+  waits for input** — unblock = stop/resume with a different `--agent` policy
   (`ask | plan | accept-edits | smart-approve | auto-approve`). Done = exit 0.
   **Vibe blocks on an open stdin pipe — spawn it with stdin ignored.**
 
@@ -138,7 +138,7 @@ temp dir. HTTP API: `http://127.0.0.1:49377` (first free port from there),
 - **No node-pty** — both CLIs work over pipes in headless mode. (Interactive
   TUI mode would be a later phase and would need node-pty.)
 - **Vibe "blocked" = denied approval** (`tool_denied` effect), because headless
-  vibe auto-denies instead of waiting. The GUI's answer is stop/relaunch with a
+  vibe auto-denies instead of waiting. The GUI's answer is stop/resume with a
   different approval policy, not a mid-run answer.
 - **MCP shim is generated at startup** into the data dir (from
   `shim-source.ts`), so it works identically in dev and packaged builds.
@@ -156,9 +156,9 @@ temp dir. HTTP API: `http://127.0.0.1:49377` (first free port from there),
    - `src/lib/components/StatusBadge.svelte` — colored status dot
    - `src/lib/components/AgentCard.svelte` — one row per agent (tool, project/solo, task, status, lastMessage)
    - `src/lib/components/AgentDetail.svelte` — task/status/times/cost, live event
-     log (auto-scroll), actions: Stop, Relaunch (for vibe: pick approval policy
-     first), and when `agent.pendingPermission` is set: Approve/Deny buttons
-     calling `api.decidePermission(...)`
+     log (auto-scroll), actions: Stop, Resume (optional follow-up message; for
+     vibe: pick approval policy first), and when `agent.pendingPermission` is
+     set: Approve/Deny buttons calling `api.decidePermission(...)`
    - `src/lib/components/SpawnDialog.svelte` — modal: tool select, project select
      (solo or one of `$projects`), task textarea, cwd (defaults to the project's
      main folder; native folder picker via `api.pickDirectory()`), vibe policy

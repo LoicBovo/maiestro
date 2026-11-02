@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { execFile } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -166,6 +166,12 @@ export class Daemon {
     }
     this.registry.addAgent(agent)
     this.emit(agent.id, 'log', 'Spawned ' + opts.tool + ' in ' + agent.cwd)
+    this.startAgentProcess(agent, opts)
+    return agent
+  }
+
+  /** Starts the agent's CLI process (headless pipes or PTY) and supervises it. */
+  private startAgentProcess(agent: Agent, opts: SpawnOptions): void {
     try {
       const ctx = this.adapterCtx()
       const proc =
@@ -187,7 +193,6 @@ export class Daemon {
       this.emit(agent.id, 'error', 'Failed to spawn: ' + (e as Error).message)
       this.registry.setStatus(agent.id, 'error')
     }
-    return agent
   }
 
   async stopAgent(id: string): Promise<void> {
@@ -199,17 +204,73 @@ export class Daemon {
     this.emit(id, 'log', 'Stopped by user')
   }
 
-  async relaunchAgent(id: string, optionsOverride?: SpawnOptions['options']): Promise<Agent> {
-    const old = this.registry.getAgent(id)
-    if (!old) throw new Error('agent not found')
-    return this.spawnAgent({
-      tool: old.tool,
-      task: old.task,
-      name: old.name ?? undefined,
-      cwd: old.cwd,
-      projectId: old.projectId,
-      options: { ...old.options, ...optionsOverride },
+  /**
+   * Resumes the agent's latest CLI session in place: instead of replaying the
+   * original request, the recorded session is reopened with `--resume` and a
+   * follow-up prompt. For vibe agents recorded before session tracking
+   * existed, falls back to the newest vibe session logged for the agent's
+   * working directory.
+   */
+  async resumeAgent(id: string, message?: string, optionsOverride?: SpawnOptions['options']): Promise<Agent> {
+    const agent = this.registry.getAgent(id)
+    if (!agent) throw new Error('agent not found')
+    if (agent.status === 'running' || agent.status === 'blocked') {
+      throw new Error('agent is still running')
+    }
+    const sessionId =
+      agent.sessionId ?? (agent.tool === 'vibe' ? this.latestVibeSession(agent.cwd) : null)
+    if (!sessionId) throw new Error('no recorded session to resume — run the agent once first')
+    const prompt = message?.trim() || 'continue'
+    this.registry.setStatus(id, 'running', { pendingPermission: null, endedAt: null })
+    this.emit(id, 'log', 'Resuming session ' + sessionId.slice(0, 8) + ': ' + prompt)
+    this.startAgentProcess(agent, {
+      tool: agent.tool,
+      task: agent.task,
+      cwd: agent.cwd,
+      projectId: agent.projectId,
+      options: { ...agent.options, ...optionsOverride },
+      resumeSessionId: sessionId,
+      resumePrompt: prompt,
     })
+    return this.registry.getAgent(id)!
+  }
+
+  /**
+   * Newest vibe session id recorded for a working directory, or null. Covers
+   * both session-store layouts (legacy `session_*` dirs and unified-harness
+   * `unified/<uuid>` dirs, each with a `meta.json` recording the cwd).
+   */
+  private latestVibeSession(cwd: string): string | null {
+    const norm = (p: string): string => {
+      try {
+        return realpathSync(p)
+      } catch {
+        return p
+      }
+    }
+    const sessionDir = join(process.env.VIBE_HOME ?? join(homedir(), '.vibe'), 'logs', 'session')
+    const target = norm(cwd)
+    let dirs: string[] = []
+    try {
+      dirs = readdirSync(sessionDir).map((entry) => join(sessionDir, entry))
+      dirs.push(...readdirSync(join(sessionDir, 'unified')).map((entry) => join(sessionDir, 'unified', entry)))
+    } catch {
+      // no vibe session directory
+      return null
+    }
+    let best: { id: string; started: string } | null = null
+    for (const dir of dirs) {
+      try {
+        const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'))
+        if (typeof meta?.session_id !== 'string') continue
+        if (norm(String(meta?.environment?.working_directory ?? '')) !== target) continue
+        const started = typeof meta.start_time === 'string' ? meta.start_time : ''
+        if (!best || started > best.started) best = { id: meta.session_id, started }
+      } catch {
+        // not a session dir / unreadable meta — skip it
+      }
+    }
+    return best?.id ?? null
   }
 
   /** Sets or clears the user-given name of an agent. */

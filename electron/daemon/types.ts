@@ -68,6 +68,10 @@ export interface SpawnOptions {
   cwd: string
   /** null or omitted: open the agent solo (no project) */
   projectId?: string | null
+  /** when set, resume this CLI session instead of starting a new one */
+  resumeSessionId?: string
+  /** follow-up prompt sent when resuming (defaults to "continue") */
+  resumePrompt?: string
   options?: {
     /** where the agent runs: headless pipes (tracked in the GUI) or an
      *  embedded interactive terminal rendered in the agent's detail pane */

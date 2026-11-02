@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterUpdate } from 'svelte'
   import { api } from '../api'
-  import { projects, selectedEvents, selectAgent } from '../state'
+  import { projects, selectedEvents } from '../state'
   import type { Agent } from '../types'
   import StatusBadge from './StatusBadge.svelte'
   import TerminalPane from './TerminalPane.svelte'
@@ -13,6 +13,8 @@
   let logEl: HTMLElement
   let policy = 'auto-approve'
   let maxTurns = 25
+  let message = ''
+  let resumeError = ''
   let denyMessage = ''
   let busy = ''
   let lastAgentId = ''
@@ -25,12 +27,14 @@
       ? 'solo'
       : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo'
 
-  // reset the relaunch form when the selected agent changes (not on every
+  // reset the resume form when the selected agent changes (not on every
   // agents:changed push, which would clobber an in-progress edit)
   $: if (agent.id !== lastAgentId) {
     lastAgentId = agent.id
     policy = agent.options?.vibeAgent ?? 'auto-approve'
     maxTurns = agent.options?.maxTurns ?? 25
+    message = ''
+    resumeError = ''
     denyMessage = ''
     renaming = false
   }
@@ -66,12 +70,14 @@
     }
   }
 
-  async function relaunch(): Promise<void> {
-    busy = 'relaunch'
+  async function resume(): Promise<void> {
+    busy = 'resume'
+    resumeError = ''
     try {
       const opts = agent.tool === 'vibe' ? { vibeAgent: policy, maxTurns } : undefined
-      const fresh = await api.relaunchAgent(agent.id, opts)
-      selectAgent(fresh.id)
+      await api.resumeAgent(agent.id, message.trim() || undefined, opts)
+    } catch (e) {
+      resumeError = (e as Error).message
     } finally {
       busy = ''
     }
@@ -187,17 +193,24 @@
 
   <div class="detail-actions">
     {#if agent.status !== 'running'}
+      <input
+        class="resume-message"
+        bind:value={message}
+        placeholder="Message (default: continue)"
+        title="Follow-up prompt sent to the agent's latest session"
+      />
       {#if agent.tool === 'vibe'}
-        <select bind:value={policy} title="Approval policy for the relaunch">
+        <select bind:value={policy} title="Approval policy for the resume">
           {#each policies as p}
             <option value={p}>{p}</option>
           {/each}
         </select>
         <input type="number" bind:value={maxTurns} min="1" max="200" title="Max turns" />
       {/if}
-      <button class="btn primary" disabled={!!busy} on:click={relaunch}>
-        {busy === 'relaunch' ? 'Relaunching…' : 'Relaunch'}
+      <button class="btn primary" disabled={!!busy} on:click={resume}>
+        {busy === 'resume' ? 'Resuming…' : 'Resume'}
       </button>
+      {#if resumeError}<span class="resume-error">{resumeError}</span>{/if}
     {/if}
   </div>
 

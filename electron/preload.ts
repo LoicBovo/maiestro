@@ -13,8 +13,8 @@ const api = {
   removeAgent: (id: string): Promise<void> => ipcRenderer.invoke('agents:remove', id),
   renameAgent: (id: string, name: string): Promise<Agent> =>
     ipcRenderer.invoke('agents:rename', id, name),
-  relaunchAgent: (id: string, options?: SpawnOptions['options']): Promise<Agent> =>
-    ipcRenderer.invoke('agents:relaunch', id, options),
+  resumeAgent: (id: string, message?: string, options?: SpawnOptions['options']): Promise<Agent> =>
+    ipcRenderer.invoke('agents:resume', id, message, options),
   decidePermission: (
     agentId: string,
     toolUseId: string,

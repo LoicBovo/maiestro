@@ -21,6 +21,12 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext, policy: str
     ctx.emit(agent.id, 'log', line.slice(0, 300))
     return
   }
+  // every streaming entry carries the session id; record it (once) so the
+  // agent can be resumed later
+  if (typeof d.sessionId === 'string') {
+    const a = ctx.registry.getAgent(agent.id)
+    if (a && a.sessionId !== d.sessionId) ctx.registry.updateAgent(agent.id, { sessionId: d.sessionId })
+  }
   switch (d.type) {
     case 'message':
       if (d.role === 'assistant') {
@@ -38,7 +44,7 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext, policy: str
         const code = state.error?.code
         if (code === 'tool_denied') {
           // headless vibe auto-denies approvals when the policy asks; the run
-          // keeps going, so flag it blocked and let the user stop/relaunch
+          // keeps going, so flag it blocked and let the user stop/resume
           ctx.emit(
             agent.id,
             'blocked',
@@ -70,14 +76,18 @@ function handleLine(agent: Agent, line: string, ctx: AdapterContext, policy: str
 }
 
 /**
- * Spawns `vibe -p <task>` in headless streaming mode. Vibe never blocks on
- * input in headless mode — denials surface as failed effects (tool_denied),
- * which we report as `blocked`. Returns the running process.
+ * Spawns `vibe -p <task>` in headless streaming mode. With `resumeSessionId`
+ * set, resumes that session with a follow-up prompt instead of starting a new
+ * one. Vibe never blocks on input in headless mode — denials surface as
+ * failed effects (tool_denied), which we report as `blocked`. Returns the
+ * running process.
  */
 export function startVibeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext): LineProcess {
   const policy = opts.options?.vibeAgent ?? 'auto-approve'
+  const prompt = opts.resumeSessionId ? (opts.resumePrompt ?? 'continue') : opts.task
   const args = [
-    '-p', opts.task,
+    ...(opts.resumeSessionId ? ['--resume', opts.resumeSessionId] : []),
+    '-p', prompt,
     '--output', 'streaming',
     '--workdir', agent.cwd,
     '--agent', policy,

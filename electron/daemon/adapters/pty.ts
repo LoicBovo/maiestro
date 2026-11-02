@@ -165,12 +165,15 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
   const policy = opts.options?.vibeAgent ?? 'auto-approve'
   const cli = resolveCli(agent.tool)
   let hookSettingsFile: string | null = null
+  const resumeArgs = opts.resumeSessionId
+    ? ['--resume', opts.resumeSessionId, opts.resumePrompt ?? 'continue']
+    : [opts.task]
   let args: string[]
   if (agent.tool === 'claude') {
     hookSettingsFile = writeClaudeHookSettings(agent.id, ctx)
-    args = [opts.task, '--settings', hookSettingsFile]
+    args = [...resumeArgs, '--settings', hookSettingsFile]
   } else {
-    args = [opts.task, '--agent', policy]
+    args = [...resumeArgs, '--agent', policy]
   }
 
   const term = pty.spawn(cli, args, {

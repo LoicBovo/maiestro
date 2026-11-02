@@ -30,7 +30,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | AGT-03 | Branch tracking | Git branch of the agent's cwd recorded at spawn time (null when not a repo); shown on the agent card. | working | Spawn in a git repo, check the card |
 | AGT-04 | Status lifecycle | `running → blocked → done / error / stopped`; transitions persisted with `endedAt`; stale `running`/`blocked` agents are re-marked `stopped` ("daemon restarted") on daemon restart. | working | Kill the app mid-run, relaunch, agent shows `stopped` |
 | AGT-05 | Stop agent | Kills the process (SIGTERM then SIGKILL), cancels pending permission requests, status → `stopped`. | working | Stop button on a running agent |
-| AGT-06 | Relaunch agent | Re-spawns with the same tool/task/name/cwd/project and options; options can be overridden (e.g. new vibe policy). Original agent record is kept. | working | Relaunch on a vibe agent with a different policy |
+| AGT-06 | Resume agent | Resumes the agent's latest CLI session in place (`--resume <sessionId>` + follow-up message, default "continue") instead of re-running the original task; the vibe stream records the session id per run, and vibe agents with none recorded fall back to the newest vibe session logged for their cwd. Options can be overridden (e.g. new vibe policy). | working | Resume a vibe agent; it remembers the earlier turn |
 | AGT-07 | Remove agent | Stops it if needed (confirm dialog when running/blocked), deletes the record and its events from the GUI. | working | Close button on a card |
 | AGT-08 | Last message | Latest meaningful output of the agent (assistant text, final result, TUI tail) mirrored on the agent record for at-a-glance status in the list. | working | Watch the card while an agent runs |
 
@@ -43,7 +43,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | ADP-03 | Approve / Deny in GUI | Detail pane shows pending tool name + input; Approve allows with same input; Deny sends a message (editable). | working | Smoke + GUI |
 | ADP-04 | Vibe headless | `vibe -p <task> --output streaming --workdir --agent <policy> --max-turns`; JSONL parsed, non-JSON lines tolerated; **stdin ignored** (vibe blocks on an open pipe). | working | `npm run smoke` (vibe path) |
 | ADP-05 | Vibe approval policies | `ask \| plan \| accept-edits \| smart-approve \| auto-approve` selectable per agent; headless vibe auto-denies when the policy asks. | working | Spawn with `ask`, watch a denial |
-| ADP-06 | Vibe blocked semantics | Denied approval surfaces as a `tool_denied` failed effect → agent marked `blocked` with a log entry (policy named). Unblock = stop/relaunch with a different policy. | working | Smoke: vibe blocked → stop |
+| ADP-06 | Vibe blocked semantics | Denied approval surfaces as a `tool_denied` failed effect → agent marked `blocked` with a log entry (policy named). Unblock = stop/resume with a different policy. | working | Smoke: vibe blocked → stop |
 | ADP-07 | Cost tracking | Claude reports `total_cost_usd` on `result`; shown in detail pane. | working | Detail pane of a finished claude agent |
 
 ## 3. Terminal mode (PTY interactive agents) (TRM)
@@ -91,7 +91,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | GUI-04 | Detail pane | Task, name (inline rename), status, project, cwd, branch, start/end time, duration, cost, session id; live event log (messages, tool uses/results, blocked, done, error, logs) auto-scrolling unless the user scrolled up. | working | Select an agent |
 | GUI-05 | Spawn dialog | Modal: tool select, project select (pre-set to the current sidebar filter, solo default), name, task textarea, cwd with native folder picker, mode (headless/terminal), vibe policy + maxTurns (vibe only). | working | "+ New agent" |
 | GUI-06 | Live updates | Agents, projects, and events are pushed from the daemon over IPC (`agents:changed`, `projects:changed`, `agent:event`, `terminal:data`); no polling. Selection preserved across pushes. | working | Watch two agents run |
-| GUI-07 | Relaunch form | Detail pane offers Stop, and Relaunch (vibe: policy + maxTurns pickers), with per-agent busy state. | working | Relaunch a vibe agent |
+| GUI-07 | Resume form | Detail pane offers Stop, and Resume (optional follow-up message; vibe: policy + maxTurns pickers), with per-agent busy state; resume errors show inline. | working | Resume a vibe agent |
 
 ## 8. Daemon, persistence, API (DAE)
 
@@ -99,7 +99,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | --- | --- | --- | --- | --- |
 | DAE-01 | Daemon core | UI-agnostic orchestrator (registry + process supervision + events + permissions) running inside the Electron main process; the standalone CLI runs the same daemon headless. | working | `npm run daemon` |
 | DAE-02 | Persistence | JSON files under `~/.maiestro` (override with `MAIESTRO_HOME`): `agents.json`, `projects.json`, `events.jsonl` (append-only, per agent, removed with the agent), `config.json`. In-memory registry is the source of truth, persisted on every change. | working | Restart the app, state survives |
-| DAE-03 | HTTP API | Bound to `127.0.0.1` (first free port from 49377), bearer-token auth (token in `config.json`). Endpoints: agents list/spawn/get/events/stop/relaunch/rename/permission/remove; projects list/create/delete; `/internal/permission-request` (held open); `/internal/agent-hook`; `/healthz`. Used by the MCP shim and agent hooks, not by the GUI (which uses IPC). | working | `curl /healthz`; smoke test |
+| DAE-03 | HTTP API | Bound to `127.0.0.1` (first free port from 49377), bearer-token auth (token in `config.json`). Endpoints: agents list/spawn/get/events/stop/resume/rename/permission/remove; projects list/create/delete; `/internal/permission-request` (held open); `/internal/agent-hook`; `/healthz`. Used by the MCP shim and agent hooks, not by the GUI (which uses IPC). | working | `curl /healthz`; smoke test |
 | DAE-04 | Process management | Line-based pipe spawning with SIGTERM→SIGKILL escalation; PTY processes owned and cleaned up by the daemon; on app quit all agents are stopped. | working | Quit the app with agents running |
 | DAE-05 | App window behavior | Closing the window does not quit: the daemon (and agents) keep running; the dock icon re-opens the window; quitting stops agents. macOS dock icon + app name set to Maiestro. | working | Close window, agent keeps running |
 
