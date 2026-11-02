@@ -13,6 +13,34 @@ export const projectFilter = writable<ProjectFilter>('all')
 export const toolFilter = writable<'all' | AgentTool>('all')
 export const statusFilter = writable<'all' | AgentStatus>('all')
 
+const PRS_PANE_KEY = 'maiestro:prsPaneOpen'
+
+/** Whether the Open PRs pane is expanded (persisted across launches). */
+export const prsPaneOpen = writable(true)
+
+/** Opens/closes the Open PRs pane and resizes the window accordingly. */
+export function togglePrsPane(open: boolean): void {
+  prsPaneOpen.set(open)
+  try {
+    localStorage.setItem(PRS_PANE_KEY, String(open))
+  } catch {
+    // storage unavailable — keep the in-memory state only
+  }
+  void api.setPrsPane(open)
+}
+
+/** Restores the persisted pane state and syncs the window size to match. */
+export function restorePrsPane(): void {
+  let saved: string | null = null
+  try {
+    saved = localStorage.getItem(PRS_PANE_KEY)
+  } catch {
+    // ignore — fall back to open
+  }
+  prsPaneOpen.set(saved !== 'false')
+  void api.setPrsPane(saved !== 'false')
+}
+
 export const selectedAgent = derived(
   [agents, selectedId],
   ([$agents, $selectedId]) => $agents.find((a) => a.id === $selectedId) ?? null,

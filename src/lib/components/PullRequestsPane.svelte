@@ -1,6 +1,6 @@
 <script lang="ts">
   import { api } from '../api'
-  import { agents, projectFilter, projects } from '../state'
+  import { agents, prsPaneOpen, projectFilter, projects, togglePrsPane } from '../state'
   import type { ProjectPRs } from '../types'
 
   let prs: ProjectPRs | null = null
@@ -43,50 +43,64 @@
   }
 </script>
 
-<aside class="prs-pane">
-  <header class="prs-header">
-    <span class="prs-title">Open PRs{project ? ` · ${project.name}` : ''}</span>
-    {#if projectId}
-      <button class="prs-refresh" title="Refresh" disabled={loading} on:click={() => void refresh(projectId, finished)}>
-        {loading ? 'Loading…' : 'Refresh'}
-      </button>
-    {/if}
-  </header>
+{#if !$prsPaneOpen}
+  <aside class="prs-pane prs-rail">
+    <button class="prs-toggle" title="Show Open PRs" on:click={() => togglePrsPane(true)}>
+      ‹
+    </button>
+    <span class="prs-rail-label" title="Open PRs">Open PRs</span>
+  </aside>
+{:else}
+  <aside class="prs-pane">
+    <header class="prs-header">
+      <span class="prs-title">Open PRs{project ? ` · ${project.name}` : ''}</span>
+      <button
+        class="prs-toggle"
+        title="Hide Open PRs"
+        on:click={() => togglePrsPane(false)}
+      >›</button>
+      {#if projectId}
+        <button class="prs-refresh" title="Refresh" disabled={loading} on:click={() => void refresh(projectId, finished)}>
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      {/if}
+    </header>
 
-  {#if !projectId}
-    <div class="prs-empty">Select a project in the sidebar to see its open pull requests.</div>
-  {:else if error}
-    <div class="prs-empty prs-error">{error}</div>
-  {:else if prs}
-    {#if prs.prs.length === 0}
-      <div class="prs-empty">No open pull requests.</div>
-    {:else}
-      <div class="prs-list">
-        {#each prs.prs as pr (pr.url)}
-          <button class="pr-item" title={pr.url} on:click={() => openPr(pr.url)}>
-            <div class="pr-top">
-              <span class="pr-repo">{pr.repo}</span>
-              <span class="pr-number">#{pr.number}</span>
-            </div>
-            <div class="pr-title">
-              {#if pr.isDraft}<span class="pr-draft">draft</span>{/if}
-              {pr.title}
-            </div>
-            <div class="pr-meta">
-              <span class="pr-branch">{pr.branch}</span>
-              <span class="pr-author">@{pr.author}</span>
-              <span class="pr-time">{timeAgo(pr.updatedAt)}</span>
-            </div>
-          </button>
-        {/each}
-      </div>
+    {#if !projectId}
+      <div class="prs-empty">Select a project in the sidebar to see its open pull requests.</div>
+    {:else if error}
+      <div class="prs-empty prs-error">{error}</div>
+    {:else if prs}
+      {#if prs.prs.length === 0}
+        <div class="prs-empty">No open pull requests.</div>
+      {:else}
+        <div class="prs-list">
+          {#each prs.prs as pr (pr.url)}
+            <button class="pr-item" title={pr.url} on:click={() => openPr(pr.url)}>
+              <div class="pr-top">
+                <span class="pr-repo">{pr.repo}</span>
+                <span class="pr-number">#{pr.number}</span>
+              </div>
+              <div class="pr-title">
+                {#if pr.isDraft}<span class="pr-draft">draft</span>{/if}
+                {pr.title}
+              </div>
+              <div class="pr-meta">
+                <span class="pr-branch">{pr.branch}</span>
+                <span class="pr-author">@{pr.author}</span>
+                <span class="pr-time">{timeAgo(pr.updatedAt)}</span>
+              </div>
+            </button>
+          {/each}
+        </div>
+      {/if}
+      {#each prs.errors as e (e.dir)}
+        <div class="prs-dir-error" title={e.message}>
+          {e.dir.split('/').pop()}: {e.message.split('\n')[0]}
+        </div>
+      {/each}
+    {:else if loading}
+      <div class="prs-empty">Loading…</div>
     {/if}
-    {#each prs.errors as e (e.dir)}
-      <div class="prs-dir-error" title={e.message}>
-        {e.dir.split('/').pop()}: {e.message.split('\n')[0]}
-      </div>
-    {/each}
-  {:else if loading}
-    <div class="prs-empty">Loading…</div>
-  {/if}
-</aside>
+  </aside>
+{/if}

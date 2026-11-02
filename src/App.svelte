@@ -14,7 +14,9 @@
     init,
     projectFilter,
     projects,
+    prsPaneOpen,
     removeAgent,
+    restorePrsPane,
     selectAgent,
     selectedAgent,
     selectedId,
@@ -29,6 +31,7 @@
   let creatingProject = false
 
   onMount(() => {
+    restorePrsPane()
     void init()
   })
 
@@ -78,7 +81,7 @@
   }
 </script>
 
-<div class="app">
+<div class="app" class:prs-closed={!$prsPaneOpen}>
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="app-title">
