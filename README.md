@@ -51,9 +51,20 @@ Equivalent alternative:
 
 Note: `node_modules` must stay installed. Native/runtime dependencies such as `node-pty` are not bundled into `out/` — they are loaded from `node_modules` at runtime.
 
-## Packaging into a standalone app (optional)
+## Packaging into a standalone app
 
-`npx electron .` still requires Node's `node_modules` to be present. To get a double-clickable `.app` (macOS) / `.exe` (Windows) that runs with nothing else installed, use a packager such as [electron-builder](https://www.electron.build/). It is not currently set up in this project.
+`npx electron .` still requires Node's `node_modules` to be present. To get a double-clickable `.app` (macOS) that runs with nothing else installed, the project uses [electron-builder](https://www.electron.build/):
+
+```bash
+npm run dist
+```
+
+This compiles the app (`npm run build`), then packages it into `release/`:
+
+- `release/mac-arm64/Maiestro.app` — double-clickable app bundle
+- `release/Maiestro-0.1.0-arm64.dmg` — disk image for distribution
+
+`node-pty` is a native module; electron-builder rebuilds/unpacks it inside the bundle automatically, so the packaged app does not depend on the checkout's `node_modules`. The agents the GUI drives (`claude`, `vibe` CLIs) are still expected on the `PATH` — the app manages them, it does not ship them.
 
 ## Other scripts
 

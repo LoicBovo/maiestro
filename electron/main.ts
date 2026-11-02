@@ -1,3 +1,4 @@
+/// <reference types="electron-vite/node" />
 import { app, BrowserWindow, dialog, ipcMain, Notification, shell } from 'electron'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -5,7 +6,11 @@ import { Daemon } from './daemon/daemon'
 import { listProjectPRs } from './daemon/prs'
 import type { SpawnOptions } from './daemon/types'
 
-const LOGO_PATH = join(__dirname, '../../src/assets/logo.png')
+// electron-vite copies the file into `out/main/` at build time and rewrites
+// the import to a path that stays valid inside a packaged .app bundle.
+import logoPath from '../src/assets/logo.png?asset'
+
+const LOGO_PATH = logoPath
 
 // In dev the app runs inside the stock Electron.app bundle, whose default
 // name and icon are Electron's. Override the app name (drives the default
