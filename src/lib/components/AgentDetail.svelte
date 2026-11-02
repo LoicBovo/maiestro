@@ -11,7 +11,7 @@
   const policies = ['ask', 'plan', 'accept-edits', 'smart-approve', 'auto-approve']
 
   let logEl: HTMLElement
-  let policy = 'smart-approve'
+  let policy = 'auto-approve'
   let maxTurns = 25
   let denyMessage = ''
   let busy = ''
@@ -29,7 +29,7 @@
   // agents:changed push, which would clobber an in-progress edit)
   $: if (agent.id !== lastAgentId) {
     lastAgentId = agent.id
-    policy = agent.options?.vibeAgent ?? 'smart-approve'
+    policy = agent.options?.vibeAgent ?? 'auto-approve'
     maxTurns = agent.options?.maxTurns ?? 25
     denyMessage = ''
     renaming = false
