@@ -156,9 +156,11 @@ class PtyProc implements PtyProcess {
 }
 
 /**
- * Spawns the agent's interactive CLI (claude "task" / vibe "task") in a PTY
- * attached to the GUI: the live CLI is rendered in the agent's detail pane
- * and the user answers its questions right there.
+ * Spawns the agent's interactive CLI (claude / vibe) in a PTY attached to the
+ * GUI: the live CLI is rendered in the agent's detail pane and the user
+ * answers its questions right there. The CLI starts without a prompt — the
+ * user types the task in the embedded terminal. Resuming reopens the recorded
+ * session with a follow-up prompt.
  */
 export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext, handlers: PtyHandlers): PtyProcess {
   ensureSpawnHelperExecutable()
@@ -167,7 +169,7 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
   let hookSettingsFile: string | null = null
   const resumeArgs = opts.resumeSessionId
     ? ['--resume', opts.resumeSessionId, opts.resumePrompt ?? 'continue']
-    : [opts.task]
+    : []
   let args: string[]
   if (agent.tool === 'claude') {
     hookSettingsFile = writeClaudeHookSettings(agent.id, ctx)
