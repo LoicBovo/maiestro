@@ -1,6 +1,6 @@
 import type { Agent } from './types'
 
-export type NotifyFn = (title: string, body: string) => void
+export type NotifyFn = (title: string, body: string, urgent?: boolean) => void
 
 function shortTask(agent: Agent): string {
   const t = agent.task.length > 60 ? agent.task.slice(0, 57) + '...' : agent.task
@@ -26,7 +26,7 @@ export class Notifier {
     const project = this.projectName(agent.projectId) ?? 'solo'
     switch (to) {
       case 'blocked':
-        this.notify('Agent blocked — ' + project, tag + ' needs a decision')
+        this.notify('Agent blocked — ' + project, tag + ' needs a decision', true)
         break
       case 'done':
         this.notify('Agent done — ' + project, tag)

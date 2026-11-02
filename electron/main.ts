@@ -26,10 +26,20 @@ let daemon: Daemon | null = null
 const PRS_PANE_DELTA = 270
 let prsPaneOpen = true
 
-function notify(title: string, body: string): void {
-  const n = new Notification({ title, body })
-  n.on('click', () => showWindow())
-  n.show()
+function notify(title: string, body: string, urgent = false): void {
+  if (Notification.isSupported()) {
+    const n = new Notification({ title, body })
+    n.on('click', () => showWindow())
+    n.show()
+  } else {
+    console.log('[notify]', title, '—', body)
+  }
+  // OS notifications can be silently dropped (macOS never asked / Focus): also
+  // grab attention through the Dock, which needs no authorization. Critical
+  // bounces until the app is activated; informational bounces once.
+  if (process.platform === 'darwin' && app.dock && !win?.isFocused()) {
+    app.dock.bounce(urgent ? 'critical' : 'informational')
+  }
 }
 
 function createWindow(): void {

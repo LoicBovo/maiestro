@@ -53,7 +53,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | TRM-01 | Embedded terminal | Agent's interactive CLI (no `-p`) runs in a PTY rendered with xterm.js in the detail pane; keystrokes sent back; resizable. | working | Spawn in terminal mode, type a follow-up prompt |
 | TRM-02 | Scrollback / late attach | Daemon keeps up to 256k chars of scrollback per terminal with a monotonic sequence number; attaching returns the buffer + seq, live chunks dedupe against it. | working | Open the detail pane mid-run |
 | TRM-03 | CLI resolution | CLI resolved to an absolute path (PATH + `~/.local/bin`) so it works when Electron has a sparse PATH; node-pty `spawn-helper` exec bit repaired once at startup. | working | Launch app from Finder |
-| TRM-04 | Vibe TUI status markers | Vibe's OSC 7501 `state=working|done` markers mapped to `running`/`done` turn states (CLI stays open for follow-ups). | working | Terminal-mode vibe: run a turn, see `done`, prompt again |
+| TRM-04 | Vibe TUI status markers | Vibe's OSC 7501 markers mapped to turn states: `state=working` → `running` (turn started), `state=done` → `done`, `state=error` → `error`, `state=blocked` / `blocked:kind=<permission|question>` → `blocked` (CLI stays open; the user answers in the embedded terminal). | working | Terminal-mode vibe: run a turn, see `done`; with the `ask` policy, see `blocked` + notification |
 | TRM-05 | Claude TUI status via hooks | Claude TUI emits no markers; per-spawn `--settings` hooks (SessionStart, UserPromptSubmit, Notification, PostToolUse, Stop) POST to `/internal/agent-hook`; mapped to session id, turn running, permission→`blocked`, tool ran→`running`, turn complete→`done`. Settings file removed on exit. | working | Terminal-mode claude: run a turn, watch status change |
 | TRM-06 | Status mirroring | Last visible TUI line (ANSI stripped, ≥3 chars, throttled to 500 ms) mirrored into `lastMessage` so the main window shows live progress. | working | Card updates while terminal agent runs |
 | TRM-07 | Terminal exit handling | Exit 0 → `done`, non-zero → `error` (unless already stopped by the user). | working | Exit the CLI in the pane |
@@ -78,7 +78,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 
 | ID  | Feature | Details | Status | Verification |
 | --- | --- | --- | --- | --- |
-| NTF-01 | OS notifications | On transitions to `blocked`, `done`, `error`: title includes the project name ("solo" fallback), body identifies the agent by name (or truncated task). Clicking a notification shows/focuses the window. | working | Let an agent finish in the background |
+| NTF-01 | OS notifications | On transitions to `blocked`, `done`, `error`: title includes the project name ("solo" fallback), body identifies the agent by name (or truncated task). Clicking a notification shows/focuses the window. Delivery is robust to denied OS permissions: `Notification.isSupported()` falls back to console, and on macOS the Dock icon bounces when the window is not focused (critical until activation for `blocked`, once otherwise). | working | Let an agent finish in the background |
 | NTF-02 | Standalone daemon notifications | `npm run daemon` always logs to console; `MAIESTRO_OS_NOTIFY=1` additionally fires macOS notifications. | working | Run the standalone daemon |
 
 ## 7. GUI (GUI)
