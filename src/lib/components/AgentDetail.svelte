@@ -160,7 +160,9 @@
         </button>
       {/if}
     {/if}
-    <StatusBadge status={agent.status} />
+    {#if !isShell}
+      <StatusBadge status={agent.status} />
+    {/if}
   </div>
 
   <div class="detail-meta">

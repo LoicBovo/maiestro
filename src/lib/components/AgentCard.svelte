@@ -31,7 +31,9 @@
   <div class="card-top">
     <span class="tool-tag tool-{agent.tool}">{isShell ? 'cli' : agent.tool}</span>
     <span class="project-tag" title={agent.cwd}>{tileLabel}</span>
-    <StatusBadge status={agent.status} />
+    {#if !isShell}
+      <StatusBadge status={agent.status} />
+    {/if}
     {#if !isShell}
       <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
     {/if}
