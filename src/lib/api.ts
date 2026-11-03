@@ -33,6 +33,7 @@ interface MaiestroApi {
   pickDirectory(): Promise<string | null>
   onAgentsChanged(cb: (agents: Agent[]) => void): () => void
   onAgentEvent(cb: (ev: AgentEvent) => void): () => void
+  onFocusAgent(cb: (agentId: string) => void): () => void
   onProjectsChanged(cb: (projects: Project[]) => void): () => void
   onTerminalData(cb: (agentId: string, data: string, seq: number) => void): () => void
 }

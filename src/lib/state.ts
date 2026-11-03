@@ -98,6 +98,24 @@ export function selectAgent(id: string): void {
   })
 }
 
+/**
+ * Reveals an agent after a notification click: follows the project filter when
+ * the current one hides the agent, then selects it. Falls back to a fresh list
+ * when the agent is not in the store yet (focus can race the initial load).
+ */
+export async function focusAgent(id: string): Promise<void> {
+  let agent = get(agents).find((a) => a.id === id)
+  if (!agent) {
+    agents.set(await api.listAgents())
+    agent = get(agents).find((a) => a.id === id)
+  }
+  if (!agent) return
+  if (!matchesFilter(agent, get(projectFilter))) {
+    setProjectFilter(agent.projectId ?? 'solo')
+  }
+  selectAgent(id)
+}
+
 /** Stops the agent if needed and removes it (and its events) from the console. */
 export async function removeAgent(id: string): Promise<void> {
   const agent = get(agents).find((a) => a.id === id)
@@ -140,6 +158,7 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 export async function init(): Promise<void> {
+  api.onFocusAgent((agentId) => void focusAgent(agentId))
   const [list, projectList] = await Promise.all([api.listAgents(), api.listProjects()])
   agents.set(list)
   projects.set(projectList)
