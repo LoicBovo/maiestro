@@ -11,7 +11,7 @@
 
   $: shortTask = agent.task.length > 90 ? agent.task.slice(0, 87) + '…' : agent.task
   $: isShell = agent.tool === 'shell'
-  // a cli pane is pinned to its project — the tag names it, not the branch
+  // a shell pane is pinned to its project — the tag names it, not the branch
   $: tileLabel = isShell
     ? agent.projectId == null
       ? 'solo'
@@ -29,7 +29,7 @@
   on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('select')}
 >
   <div class="card-top">
-    <span class="tool-tag tool-{agent.tool}">{isShell ? 'cli' : agent.tool}</span>
+    <span class="tool-tag tool-{agent.tool}">{agent.tool}</span>
     <span class="project-tag" title={agent.cwd}>{tileLabel}</span>
     {#if !isShell}
       <StatusBadge status={agent.status} />

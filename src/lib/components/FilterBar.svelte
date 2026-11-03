@@ -4,13 +4,14 @@
 
   const tools: Array<'all' | AgentTool> = ['all', 'claude', 'vibe', 'shell']
   const statuses: Array<'all' | AgentStatus> = ['all', 'running', 'blocked', 'done', 'error', 'stopped']
-  const toolLabel = (t: 'all' | AgentTool): string =>
-    t === 'all' ? 'All tools' : t === 'shell' ? 'cli' : t
-  $: total = $agents.filter((a) => matchesFilter(a, $projectFilter)).length
+  const toolLabel = (t: 'all' | AgentTool): string => (t === 'all' ? 'All tools' : t)
+  // the pinned shell panes are displayed but never counted as agents
+  $: total = $agents.filter((a) => a.tool !== 'shell' && matchesFilter(a, $projectFilter)).length
+  $: visible = $visibleAgents.filter((a) => a.tool !== 'shell').length
 </script>
 
 <div class="filter-bar">
-  <span class="count">{$visibleAgents.length} of {total}</span>
+  <span class="count">{visible} of {total}</span>
   <select bind:value={$toolFilter} title="Filter by tool">
     {#each tools as t}
       <option value={t}>{toolLabel(t)}</option>

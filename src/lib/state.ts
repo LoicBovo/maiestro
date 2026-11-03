@@ -66,7 +66,7 @@ export function projectName(id: string | null): string | null {
 }
 
 /**
- * Whether an agent belongs to a project filter. The pinned `cli` panes are
+ * Whether an agent belongs to a project filter. The pinned `shell` panes are
  * per-project artifacts: they never appear in the "all" view.
  */
 export function matchesFilter(a: Agent, filter: ProjectFilter): boolean {
