@@ -1,4 +1,4 @@
-export type AgentTool = 'claude' | 'vibe'
+export type AgentTool = 'claude' | 'vibe' | 'shell'
 
 export type AgentStatus = 'running' | 'blocked' | 'done' | 'error' | 'stopped'
 

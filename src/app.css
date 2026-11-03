@@ -101,6 +101,7 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 .tool-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 1.5px 6px; border-radius: 4px; }
 .tool-claude { background: rgba(240, 96, 122, .14); color: #f0859a; }
 .tool-vibe { background: rgba(122, 162, 255, .14); color: #9db9ff; }
+.tool-shell { background: rgba(122, 245, 180, .12); color: #8fe8b8; }
 .need-tag, .project-tag { font-size: 11.5px; color: var(--text-dim); }
 .card-top .badge { margin-left: auto; }
 .task-text { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

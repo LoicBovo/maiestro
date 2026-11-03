@@ -1,4 +1,5 @@
-export type AgentTool = 'claude' | 'vibe'
+/** 'shell' is the pinned `cli` pane: a plain login shell, not a coding agent */
+export type AgentTool = 'claude' | 'vibe' | 'shell'
 
 export type AgentStatus = 'running' | 'blocked' | 'done' | 'error' | 'stopped'
 

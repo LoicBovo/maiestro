@@ -166,13 +166,22 @@ class PtyProc implements PtyProcess {
 export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext, handlers: PtyHandlers): PtyProcess {
   ensureSpawnHelperExecutable()
   const policy = opts.options?.vibeAgent ?? 'auto-approve'
-  const cli = resolveCli(agent.tool)
+  // The pinned `cli` pane is a plain login shell (the user's $SHELL), not a
+  // coding CLI — no prompt, no hooks, no policy.
+  let cli: string
+  if (agent.tool === 'shell') {
+    cli = process.env.SHELL || '/bin/zsh'
+  } else {
+    cli = resolveCli(agent.tool)
+  }
   let hookSettingsFile: string | null = null
   const resumeArgs = opts.resumeSessionId
     ? ['--resume', opts.resumeSessionId, opts.resumePrompt ?? 'continue']
     : []
   let args: string[]
-  if (agent.tool === 'claude') {
+  if (agent.tool === 'shell') {
+    args = ['-l']
+  } else if (agent.tool === 'claude') {
     hookSettingsFile = writeClaudeHookSettings(agent.id, ctx)
     args = [...resumeArgs, '--settings', hookSettingsFile]
   } else {
@@ -263,6 +272,8 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
 
   term.onData((chunk) => {
     handlers.onData(chunk)
+    // a plain shell has no turn state to mirror and no OSC markers to parse
+    if (agent.tool === 'shell') return
     mirrorStatus(chunk)
     handleStateMarkers(chunk)
   })
@@ -271,7 +282,7 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
     const a = ctx.registry.getAgent(agent.id)
     if (!a || a.status === 'stopped') return
     if (exitCode === 0) {
-      ctx.emit(agent.id, 'done', 'terminal agent finished')
+      ctx.emit(agent.id, 'done', agent.tool === 'shell' ? 'shell exited' : 'terminal agent finished')
       ctx.registry.setStatus(agent.id, 'done')
     } else {
       ctx.emit(agent.id, 'error', 'terminal agent exited with code ' + exitCode)
