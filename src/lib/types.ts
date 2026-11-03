@@ -1,4 +1,4 @@
-/** 'shell' is the pinned `cli` pane: a plain login shell, not a coding agent */
+/** 'shell' is a pinned `cli` pane (one per project plus one solo): a plain login shell, not a coding agent */
 export type AgentTool = 'claude' | 'vibe' | 'shell'
 
 export type AgentStatus = 'running' | 'blocked' | 'done' | 'error' | 'stopped'
