@@ -399,6 +399,10 @@ export class Daemon {
     return this.registry.createProject(name, dirs)
   }
 
+  updateProjectDirs(id: string, dirs: string[]): Project {
+    return this.registry.updateProjectDirs(id, dirs)
+  }
+
   deleteProject(id: string): void {
     this.registry.deleteProject(id)
   }

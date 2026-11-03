@@ -21,6 +21,7 @@
     selectedAgent,
     selectedId,
     setProjectFilter,
+    updateProjectDirs,
     visibleAgents,
   } from './lib/state'
 
@@ -29,6 +30,9 @@
   let newProjectName = ''
   let newProjectDirs: string[] = ['']
   let creatingProject = false
+  let editingProjectId: string | null = null
+  let editProjectDirs: string[] = []
+  let savingProject = false
 
   onMount(() => {
     restorePrsPane()
@@ -64,6 +68,44 @@
     const picked = await api.pickDirectory()
     if (picked) {
       newProjectDirs = newProjectDirs.map((d, i) => (i === index ? picked : d))
+    }
+  }
+
+  function startEditProject(project: typeof $projects[number]): void {
+    editingProjectId = project.id
+    editProjectDirs = [...project.dirs]
+  }
+
+  function cancelEditProject(): void {
+    editingProjectId = null
+    editProjectDirs = []
+  }
+
+  function addEditProjectDir(): void {
+    editProjectDirs = [...editProjectDirs, '']
+  }
+
+  function removeEditProjectDir(index: number): void {
+    if (editProjectDirs.length <= 1) return
+    editProjectDirs = editProjectDirs.filter((_, i) => i !== index)
+  }
+
+  async function browseEditProjectDir(index: number): Promise<void> {
+    const picked = await api.pickDirectory()
+    if (picked) {
+      editProjectDirs = editProjectDirs.map((d, i) => (i === index ? picked : d))
+    }
+  }
+
+  async function submitProjectDirs(id: string): Promise<void> {
+    const dirs = editProjectDirs.map((d) => d.trim()).filter(Boolean)
+    if (dirs.length === 0 || savingProject) return
+    savingProject = true
+    try {
+      await updateProjectDirs(id, dirs)
+      cancelEditProject()
+    } finally {
+      savingProject = false
     }
   }
 
@@ -103,7 +145,11 @@
         </button>
       </div>
       {#each $projects as p (p.id)}
-        <div class="project-item" class:active={$projectFilter === p.id}>
+        <div
+          class="project-item"
+          class:active={$projectFilter === p.id}
+          class:editing={editingProjectId === p.id}
+        >
           <button
             class="project-select"
             title={p.dirs.join('\n')}
@@ -111,10 +157,61 @@
           >
             {p.name} <span class="project-count">{countFor(p.id)}</span>
           </button>
+          <button
+            class="project-edit"
+            title="Edit folders"
+            on:click={() => (editingProjectId === p.id ? cancelEditProject() : startEditProject(p))}
+          >
+            +
+          </button>
           <button class="project-close" title="Delete project" on:click={() => deleteProject(p.id)}>
             x
           </button>
         </div>
+        {#if editingProjectId === p.id}
+          <form class="new-project-form" on:submit|preventDefault={() => submitProjectDirs(p.id)}>
+            {#each editProjectDirs as dir, i (i)}
+              <div class="dir-row">
+                <input
+                  placeholder={i === 0 ? 'Main folder' : 'Folder ' + (i + 1)}
+                  bind:value={editProjectDirs[i]}
+                  readonly
+                  title={dir}
+                />
+                {#if i === 0}
+                  <span class="dir-main">main</span>
+                {/if}
+                <button
+                  type="button"
+                  class="btn browse"
+                  title="Choose a folder"
+                  on:click={() => browseEditProjectDir(i)}
+                >…</button>
+                {#if editProjectDirs.length > 1}
+                  <button
+                    type="button"
+                    class="btn browse"
+                    title="Remove folder"
+                    on:click={() => removeEditProjectDir(i)}
+                  >x</button>
+                {/if}
+              </div>
+            {/each}
+            <button type="button" class="add-dir-btn" on:click={addEditProjectDir}>
+              + Add folder
+            </button>
+            <div class="new-project-actions">
+              <button
+                type="submit"
+                class="btn"
+                disabled={savingProject || !editProjectDirs.some((d) => d.trim())}
+              >
+                {savingProject ? 'Saving…' : 'Save'}
+              </button>
+              <button type="button" class="btn" on:click={cancelEditProject}>Cancel</button>
+            </div>
+          </form>
+        {/if}
       {/each}
       {#if showNewProject}
         <form class="new-project-form" on:submit|preventDefault={submitNewProject}>

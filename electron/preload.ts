@@ -31,6 +31,8 @@ const api = {
   listProjects: (): Promise<Project[]> => ipcRenderer.invoke('projects:list'),
   createProject: (name: string, dirs: string[]): Promise<Project> =>
     ipcRenderer.invoke('projects:create', name, dirs),
+  updateProjectDirs: (id: string, dirs: string[]): Promise<Project> =>
+    ipcRenderer.invoke('projects:update-dirs', id, dirs),
   deleteProject: (id: string): Promise<void> => ipcRenderer.invoke('projects:delete', id),
   listProjectPRs: (projectId: string): Promise<ProjectPRs> =>
     ipcRenderer.invoke('projects:open-prs', projectId),

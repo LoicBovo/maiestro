@@ -127,6 +127,12 @@ export async function createProject(name: string, dirs: string[]): Promise<void>
   projects.update((list) => [...list, project])
 }
 
+/** Replaces a project's directory list; the store refreshes via projects:changed. */
+export async function updateProjectDirs(id: string, dirs: string[]): Promise<void> {
+  const project = await api.updateProjectDirs(id, dirs)
+  projects.update((list) => list.map((p) => (p.id === id ? project : p)))
+}
+
 export async function deleteProject(id: string): Promise<void> {
   await api.deleteProject(id)
   projects.update((list) => list.filter((p) => p.id !== id))

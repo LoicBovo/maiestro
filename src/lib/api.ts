@@ -26,6 +26,7 @@ interface MaiestroApi {
   resizeTerminal(agentId: string, cols: number, rows: number): Promise<void>
   listProjects(): Promise<Project[]>
   createProject(name: string, dirs: string[]): Promise<Project>
+  updateProjectDirs(id: string, dirs: string[]): Promise<Project>
   deleteProject(id: string): Promise<void>
   listProjectPRs(projectId: string): Promise<ProjectPRs>
   openExternal(url: string): Promise<void>
