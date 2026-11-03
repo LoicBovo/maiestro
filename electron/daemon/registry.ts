@@ -95,6 +95,17 @@ export class Registry extends EventEmitter {
     return project
   }
 
+  updateProjectDirs(id: string, dirs: string[]): Project {
+    const project = this.projects.get(id)
+    if (!project) throw new Error('project not found')
+    const cleanDirs = [...new Set(dirs.map((d) => d?.trim() ?? '').filter(Boolean))]
+    if (cleanDirs.length === 0) throw new Error('a main folder is required')
+    project.dirs = cleanDirs
+    this.store.saveProjects(this.listProjects())
+    this.emit('projects')
+    return project
+  }
+
   deleteProject(id: string): void {
     if (!this.projects.delete(id)) return
     for (const a of this.agents.values()) {

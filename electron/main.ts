@@ -90,6 +90,10 @@ function registerIpc(d: Daemon): void {
   )
   ipcMain.handle('projects:list', () => d.listProjects())
   ipcMain.handle('projects:create', (_e, name: string, dirs: string[]) => d.createProject(name, dirs))
+  ipcMain.handle(
+    'projects:update-dirs',
+    (_e, id: string, dirs: string[]) => d.updateProjectDirs(id, dirs),
+  )
   ipcMain.handle('projects:delete', (_e, id: string) => d.deleteProject(id))
   ipcMain.handle('projects:open-prs', async (_e, id: string) => {
     const project = d.registry.getProject(id)

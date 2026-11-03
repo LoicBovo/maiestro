@@ -142,6 +142,17 @@ export class Server {
       }
       return
     }
+    if (projectMatch && method === 'PUT') {
+      const body = await readBody(req)
+      try {
+        const dirs = Array.isArray(body?.dirs) ? body.dirs.map(String) : []
+        const project = this.daemon.updateProjectDirs(projectMatch[1], dirs)
+        sendJson(res, 200, { project })
+      } catch (err) {
+        sendJson(res, 400, { error: String((err as Error)?.message ?? err) })
+      }
+      return
+    }
     if (projectMatch && method === 'DELETE') {
       this.daemon.deleteProject(projectMatch[1])
       sendJson(res, 200, { ok: true })
