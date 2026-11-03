@@ -20,11 +20,13 @@ app.setName('Maiestro')
 
 let win: BrowserWindow | null = null
 let daemon: Daemon | null = null
+// Agent to reveal when the renderer is ready; set by a notification click.
+let pendingFocusAgentId: string | null = null
 
-function notify(title: string, body: string, urgent = false): void {
+function notify(title: string, body: string, urgent = false, agentId?: string): void {
   if (Notification.isSupported()) {
     const n = new Notification({ title, body })
-    n.on('click', () => showWindow())
+    n.on('click', () => showWindow(agentId))
     n.show()
   } else {
     console.log('[notify]', title, '—', body)
@@ -57,15 +59,27 @@ function createWindow(): void {
   } else {
     void win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+  // A notification clicked while the window was closed queued an agent to
+  // reveal; the renderer can only receive it once its listeners are up.
+  win.webContents.on('did-finish-load', () => sendAgentFocus())
   win.on('closed', () => {
     win = null
   })
 }
 
-function showWindow(): void {
+function sendAgentFocus(): void {
+  if (pendingFocusAgentId && win && !win.isDestroyed()) {
+    win.webContents.send('agent:focus', pendingFocusAgentId)
+    pendingFocusAgentId = null
+  }
+}
+
+function showWindow(agentId?: string): void {
+  if (agentId) pendingFocusAgentId = agentId
   if (win) {
     win.show()
     win.focus()
+    sendAgentFocus()
   } else {
     createWindow()
   }

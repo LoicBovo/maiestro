@@ -53,6 +53,11 @@ const api = {
     ipcRenderer.on('agent:event', listener)
     return () => ipcRenderer.removeListener('agent:event', listener)
   },
+  onFocusAgent: (cb: (agentId: string) => void): (() => void) => {
+    const listener = (_e: unknown, agentId: string) => cb(agentId)
+    ipcRenderer.on('agent:focus', listener)
+    return () => ipcRenderer.removeListener('agent:focus', listener)
+  },
   onTerminalData: (cb: (agentId: string, data: string, seq: number) => void): (() => void) => {
     const listener = (_e: unknown, agentId: string, data: string, seq: number) =>
       cb(agentId, data, seq)
