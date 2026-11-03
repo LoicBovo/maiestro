@@ -12,6 +12,7 @@
     createProject,
     deleteProject,
     init,
+    matchesFilter,
     projectFilter,
     projects,
     prsPaneOpen,
@@ -40,9 +41,7 @@
   })
 
   function countFor(filter: 'all' | 'solo' | string): number {
-    return $agents.filter((a) =>
-      filter === 'all' ? true : filter === 'solo' ? a.projectId == null : a.projectId === filter,
-    ).length
+    return $agents.filter((a) => matchesFilter(a, filter)).length
   }
 
   function onCloseAgent(agent: typeof $agents[number]): void {
@@ -137,7 +136,7 @@
       <div class="projects-label">Projects</div>
       <div class="project-item" class:active={$projectFilter === 'all'}>
         <button class="project-select" on:click={() => setProjectFilter('all')}>
-          All agents <span class="project-count">{$agents.length}</span>
+          All agents <span class="project-count">{countFor('all')}</span>
         </button>
       </div>
       <div class="project-item" class:active={$projectFilter === 'solo'}>
