@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto'
-import { execFile } from 'node:child_process'
-import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { execFile, execFileSync } from 'node:child_process'
+import { mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -37,6 +37,40 @@ function cleanName(name: string | undefined | null): string | null {
 
 /** Scrollback kept per embedded-terminal agent (chars). */
 const TERMINAL_BUFFER_MAX = 256_000
+
+/** Label of the pinned shell agent the user cannot close. */
+const SHELL_NAME = 'cli'
+
+/** How often the pinned shell's live working directory is captured (ms). */
+const SHELL_CWD_POLL_MS = 5000
+
+/**
+ * Current working directory of a process, or null when it cannot be
+ * determined (lsof on macOS, /proc on Linux). Used to remember where the
+ * pinned `cli` shell was left when the app quits.
+ */
+function processCwd(pid: number): string | null {
+  try {
+    if (process.platform === 'linux') return readlinkSync('/proc/' + pid + '/cwd')
+    if (process.platform === 'darwin') {
+      for (const bin of ['/usr/sbin/lsof', 'lsof']) {
+        try {
+          const out = execFileSync(bin, ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], {
+            encoding: 'utf8',
+            timeout: 2000,
+          })
+          const line = out.split('\n').find((l) => l.startsWith('n'))
+          if (line) return line.slice(1)
+        } catch {
+          // candidate lsof path missing — try the next
+        }
+      }
+    }
+  } catch {
+    // cwd not available — the caller keeps the recorded one
+  }
+  return null
+}
 
 /** Current git branch of a directory, or null when it is not a git repo. */
 async function gitBranch(cwd: string): Promise<string | null> {
@@ -79,6 +113,7 @@ export class Daemon {
   private shimPath: string
   private procs = new Map<string, LineProcess>()
   private terms = new Map<string, TerminalSession>()
+  private shellCwdTimer: NodeJS.Timeout | null = null
 
   constructor(private opts: DaemonOptions = {}) {
     this.store = new Store(opts.dataDir ?? join(homedir(), '.maiestro'))
@@ -113,9 +148,22 @@ export class Daemon {
     if (this.port !== cfg.port) {
       this.store.saveConfig({ port: this.port, token: this.token })
     }
+    await this.ensureShellAgent()
+    this.shellCwdTimer = setInterval(() => void this.trackShellCwd(), SHELL_CWD_POLL_MS)
   }
 
   async stopAll(): Promise<void> {
+    if (this.shellCwdTimer) {
+      clearInterval(this.shellCwdTimer)
+      this.shellCwdTimer = null
+    }
+    // persist where the pinned shell was left so it reopens there
+    await this.trackShellCwd()
+    // mark it stopped before killing the PTY: the exit handler then skips
+    // recording (and notifying) a spurious 'error' on every quit
+    for (const a of this.registry.listAgents()) {
+      if (a.tool === 'shell') this.registry.setStatus(a.id, 'stopped')
+    }
     for (const [id, proc] of this.procs) {
       this.registry.cancelPermissions(id)
       proc.kill()
@@ -142,7 +190,9 @@ export class Daemon {
   }
 
   async spawnAgent(opts: SpawnOptions): Promise<Agent> {
-    if (opts.tool !== 'claude' && opts.tool !== 'vibe') throw new Error('unknown tool: ' + opts.tool)
+    if (opts.tool !== 'claude' && opts.tool !== 'vibe' && opts.tool !== 'shell') {
+      throw new Error('unknown tool: ' + opts.tool)
+    }
     const task = opts.task?.trim() ?? ''
     if (!task && opts.options?.mode !== 'terminal') {
       throw new Error('task is required for headless agents')
@@ -210,6 +260,56 @@ export class Daemon {
   }
 
   /**
+   * The pinned `cli` pane: a plain shell shown in the agent list like an
+   * agent, labelled `cli`, that cannot be closed and reopens where it was
+   * left. Created once (at the process cwd — home when the app is launched
+   * from the Finder with cwd "/") and restarted in its recorded cwd on
+   * every daemon start.
+   */
+  private async ensureShellAgent(): Promise<void> {
+    const shell = this.registry.listAgents().find((a) => a.tool === 'shell')
+    if (!shell) {
+      const cwd = process.cwd() === '/' ? homedir() : process.cwd()
+      await this.spawnAgent({
+        tool: 'shell',
+        name: SHELL_NAME,
+        task: '',
+        cwd,
+        projectId: null,
+        options: { mode: 'terminal' },
+      })
+      return
+    }
+    if (shell.status === 'running') return
+    this.restartShell(shell)
+  }
+
+  /** (Re)starts the pinned shell's PTY in its recorded working directory. */
+  private restartShell(agent: Agent): void {
+    this.registry.setStatus(agent.id, 'running', { endedAt: null, lastMessage: null })
+    this.startAgentProcess(agent, {
+      tool: 'shell',
+      task: '',
+      cwd: agent.cwd,
+      projectId: agent.projectId,
+      options: { ...agent.options, mode: 'terminal' },
+    })
+  }
+
+  /**
+   * Keeps the shell agent's recorded cwd in sync with the live shell process
+   * so a restart (or the next app launch) reopens where the user left it.
+   */
+  private async trackShellCwd(): Promise<void> {
+    for (const agent of this.registry.listAgents()) {
+      if (agent.tool !== 'shell' || !agent.pid || agent.status !== 'running') continue
+      const cwd = processCwd(agent.pid)
+      if (!cwd || cwd === agent.cwd) continue
+      this.registry.updateAgent(agent.id, { cwd, branch: await gitBranch(cwd) })
+    }
+  }
+
+  /**
    * Resumes the agent's latest CLI session in place: instead of replaying the
    * original request, the recorded session is reopened with `--resume` and a
    * follow-up prompt. For vibe agents recorded before session tracking
@@ -221,6 +321,12 @@ export class Daemon {
     if (!agent) throw new Error('agent not found')
     if (agent.status === 'running' || agent.status === 'blocked') {
       throw new Error('agent is still running')
+    }
+    if (agent.tool === 'shell') {
+      // the cli pane has no CLI session to resume — just restart the shell
+      this.emit(id, 'log', 'Restarting shell in ' + agent.cwd)
+      this.restartShell(agent)
+      return this.registry.getAgent(id)!
     }
     const sessionId =
       agent.sessionId ?? (agent.tool === 'vibe' ? this.latestVibeSession(agent.cwd) : null)
@@ -282,6 +388,7 @@ export class Daemon {
   renameAgent(id: string, name: string): Agent {
     const agent = this.registry.getAgent(id)
     if (!agent) throw new Error('agent not found')
+    if (agent.tool === 'shell') throw new Error('the cli pane cannot be renamed')
     const clean = cleanName(name)
     if (clean === agent.name) return agent
     this.registry.updateAgent(id, { name: clean })
@@ -348,6 +455,7 @@ export class Daemon {
   removeAgent(id: string): void {
     const agent = this.registry.getAgent(id)
     if (!agent) throw new Error('agent not found')
+    if (agent.tool === 'shell') throw new Error('the cli pane cannot be closed')
     this.registry.cancelPermissions(id)
     this.procs.get(id)?.kill()
     const proc = this.terms.get(id)?.proc

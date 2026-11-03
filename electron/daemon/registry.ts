@@ -47,9 +47,11 @@ export class Registry extends EventEmitter {
       if (a.status === 'running' || a.status === 'blocked') {
         a.status = 'stopped'
         a.endedAt = a.endedAt ?? new Date().toISOString()
-        a.lastMessage = a.lastMessage
-          ? a.lastMessage + ' (daemon restarted)'
-          : 'daemon restarted'
+        if (a.tool !== 'shell') {
+          a.lastMessage = a.lastMessage
+            ? a.lastMessage + ' (daemon restarted)'
+            : 'daemon restarted'
+        }
         dirty = true
       }
       a.pendingPermission = null
@@ -120,8 +122,13 @@ export class Registry extends EventEmitter {
     return this.projects.get(id)?.name ?? null
   }
 
+  /** Agents, newest first; the pinned `cli` shell always sits at the top. */
   listAgents(): Agent[] {
-    return [...this.agents.values()].sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    return [...this.agents.values()].sort((a, b) => {
+      if (a.tool === 'shell' && b.tool !== 'shell') return -1
+      if (b.tool === 'shell' && a.tool !== 'shell') return 1
+      return b.startedAt.localeCompare(a.startedAt)
+    })
   }
 
   getAgent(id: string): Agent | undefined {

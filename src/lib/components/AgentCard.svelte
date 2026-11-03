@@ -10,6 +10,7 @@
   const dispatch = createEventDispatcher<{ select: void; remove: void }>()
 
   $: shortTask = agent.task.length > 90 ? agent.task.slice(0, 87) + '…' : agent.task
+  $: isShell = agent.tool === 'shell'
   $: tileLabel =
     agent.branch ??
     (agent.projectId == null ? 'solo' : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo')
@@ -24,10 +25,12 @@
   on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('select')}
 >
   <div class="card-top">
-    <span class="tool-tag tool-{agent.tool}">{agent.tool}</span>
+    <span class="tool-tag tool-{agent.tool}">{isShell ? 'cli' : agent.tool}</span>
     <span class="project-tag" title={agent.cwd}>{tileLabel}</span>
     <StatusBadge status={agent.status} />
-    <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
+    {#if !isShell}
+      <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
+    {/if}
   </div>
   {#if agent.name}
     <div class="agent-name" title={agent.name}>{agent.name}</div>

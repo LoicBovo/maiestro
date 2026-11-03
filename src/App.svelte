@@ -46,6 +46,7 @@
   }
 
   function onCloseAgent(agent: typeof $agents[number]): void {
+    if (agent.tool === 'shell') return // the pinned cli pane cannot be closed
     const running = agent.status === 'running' || agent.status === 'blocked'
     if (running && !confirm('Stop and close this agent?\n"' + (agent.name ?? agent.task.slice(0, 80)) + '"')) return
     void removeAgent(agent.id)

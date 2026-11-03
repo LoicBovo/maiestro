@@ -8,6 +8,8 @@
 
   export let agent: Agent
 
+  $: isShell = agent.tool === 'shell'
+
   const policies = ['ask', 'plan', 'accept-edits', 'smart-approve', 'auto-approve']
 
   let logEl: HTMLElement
@@ -148,13 +150,15 @@
       </form>
     {:else}
       <h2 title={agent.task}>{agent.name ?? agent.task}</h2>
-      <button
-        class="btn rename-btn"
-        title={agent.name ? 'Rename agent' : 'Give this agent a name'}
-        on:click={startRename}
-      >
-        {agent.name ? 'Rename' : 'Name'}
-      </button>
+      {#if !isShell}
+        <button
+          class="btn rename-btn"
+          title={agent.name ? 'Rename agent' : 'Give this agent a name'}
+          on:click={startRename}
+        >
+          {agent.name ? 'Rename' : 'Name'}
+        </button>
+      {/if}
     {/if}
     <StatusBadge status={agent.status} />
   </div>
@@ -172,7 +176,9 @@
 
   {#if agent.options?.mode === 'terminal'}
     <div class="terminal-wrap">
-      <div class="terminal-label">Embedded terminal — type here to answer the agent</div>
+      <div class="terminal-label">
+        {isShell ? 'cli — a plain shell in the tool' : 'Embedded terminal — type here to answer the agent'}
+      </div>
       {#key agent.id}
         <TerminalPane {agent} />
       {/key}
@@ -192,7 +198,14 @@
   {/if}
 
   <div class="detail-actions">
-    {#if agent.status !== 'running'}
+    {#if isShell}
+      {#if agent.status !== 'running'}
+        <button class="btn primary" disabled={!!busy} on:click={resume}>
+          {busy === 'resume' ? 'Restarting…' : 'Restart shell'}
+        </button>
+        {#if resumeError}<span class="resume-error">{resumeError}</span>{/if}
+      {/if}
+    {:else if agent.status !== 'running'}
       <input
         class="resume-message"
         bind:value={message}
