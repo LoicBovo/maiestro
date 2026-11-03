@@ -179,7 +179,7 @@
   {#if agent.options?.mode === 'terminal'}
     <div class="terminal-wrap">
       <div class="terminal-label">
-        {isShell ? 'cli — a plain shell in the tool' : 'Embedded terminal — type here to answer the agent'}
+        {isShell ? 'shell — a plain shell in the tool' : 'Embedded terminal — type here to answer the agent'}
       </div>
       {#key agent.id}
         <TerminalPane {agent} />

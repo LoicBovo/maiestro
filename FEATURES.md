@@ -57,7 +57,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 | TRM-05 | Claude TUI status via hooks | Claude TUI emits no markers; per-spawn `--settings` hooks (SessionStart, UserPromptSubmit, Notification, PostToolUse, Stop) POST to `/internal/agent-hook`; mapped to session id, turn running, permission→`blocked`, tool ran→`running`, turn complete→`done`. Settings file removed on exit. | working | Terminal-mode claude: run a turn, watch status change |
 | TRM-06 | Status mirroring | Last visible TUI line (ANSI stripped, ≥3 chars, throttled to 500 ms) mirrored into `lastMessage` so the main window shows live progress. | working | Card updates while terminal agent runs |
 | TRM-07 | Terminal exit handling | Exit 0 → `done`, non-zero → `error` (unless already stopped by the user). | working | Exit the CLI in the pane |
-| TRM-08 | Pinned `cli` shells | One plain login shell (the user's `$SHELL`) per project — rendered like an agent with the label `cli`, opened in the project's main folder — plus one solo pane at the process cwd (home when the app launches with cwd `/`). All sit at the top of the agent list, auto-started with the daemon, and cannot be closed or renamed (daemon refuses remove/rename). A project gets its pane on creation and loses it on deletion. Each pane reopens where it was left — the live shell cwd is polled every 5 s (lsof / /proc) and persisted. Exited shell restarts via "Restart shell" (resume with no session). | working | Launch the app, `cd` in the cli pane, quit and relaunch |
+| TRM-08 | Pinned `shell` panes | One plain login shell (the user's `$SHELL`) per project — rendered like an agent with the label `shell`, opened in the project's main folder — plus one solo pane at the process cwd (home when the app launches with cwd `/`). All sit at the top of the agent list, auto-started with the daemon, and cannot be closed or renamed (daemon refuses remove/rename). A project gets its pane on creation and loses it on deletion. Each pane reopens where it was left — the live shell cwd is polled every 5 s (lsof / /proc) and persisted. Exited shell restarts via "Restart shell" (resume with no session). | working | Launch the app, `cd` in the shell pane, quit and relaunch |
 
 ## 4. Projects (PRJ)
 
@@ -117,7 +117,7 @@ behalf of the GUI. Modes: `headless` (pipes, parsed events) and `terminal`
 - Packaging with electron-builder (the app currently runs from dev tooling only).
 - Tray icon; "always allow" permission rules.
 - External/observed agents (hooks POSTing to `/api/agents/:id/events`).
-- Terminal-session records exist in types (`TerminalSession`) but are not exposed as standalone terminals attached to a project; only terminal-*mode* agents exist today (the pinned `cli` shell of TRM-08 is a terminal-mode agent with tool `shell`).
+- Terminal-session records exist in types (`TerminalSession`) but are not exposed as standalone terminals attached to a project; only terminal-*mode* agents exist today (the pinned `shell` pane of TRM-08 is a terminal-mode agent with tool `shell`).
 
 ## Changelog
 

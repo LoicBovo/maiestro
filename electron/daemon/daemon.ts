@@ -39,7 +39,7 @@ function cleanName(name: string | undefined | null): string | null {
 const TERMINAL_BUFFER_MAX = 256_000
 
 /** Label of the pinned shell agent the user cannot close. */
-const SHELL_NAME = 'cli'
+const SHELL_NAME = 'shell'
 
 /** How often the pinned shell's live working directory is captured (ms). */
 const SHELL_CWD_POLL_MS = 5000
@@ -47,7 +47,7 @@ const SHELL_CWD_POLL_MS = 5000
 /**
  * Current working directory of a process, or null when it cannot be
  * determined (lsof on macOS, /proc on Linux). Used to remember where the
- * pinned `cli` shell was left when the app quits.
+ * pinned `shell` pane was left when the app quits.
  */
 function processCwd(pid: number): string | null {
   try {
@@ -260,8 +260,8 @@ export class Daemon {
   }
 
   /**
-   * The pinned `cli` panes: plain login shells shown in the agent list like
-   * agents, labelled `cli`, that cannot be closed and reopen where they were
+   * The pinned `shell` panes: plain login shells shown in the agent list like
+   * agents, labelled `shell`, that cannot be closed and reopen where they were
    * left. One pane per project (opened in the project's main folder) plus one
    * solo pane (at the process cwd — home when the app is launched from the
    * Finder with cwd "/"). Each pane is created once and restarted in its
@@ -336,7 +336,7 @@ export class Daemon {
       throw new Error('agent is still running')
     }
     if (agent.tool === 'shell') {
-      // the cli pane has no CLI session to resume — just restart the shell
+      // the shell pane has no CLI session to resume — just restart the shell
       this.emit(id, 'log', 'Restarting shell in ' + agent.cwd)
       this.restartShell(agent)
       return this.registry.getAgent(id)!
@@ -401,7 +401,7 @@ export class Daemon {
   renameAgent(id: string, name: string): Agent {
     const agent = this.registry.getAgent(id)
     if (!agent) throw new Error('agent not found')
-    if (agent.tool === 'shell') throw new Error('the cli pane cannot be renamed')
+    if (agent.tool === 'shell') throw new Error('the shell pane cannot be renamed')
     const clean = cleanName(name)
     if (clean === agent.name) return agent
     this.registry.updateAgent(id, { name: clean })
@@ -468,7 +468,7 @@ export class Daemon {
   removeAgent(id: string): void {
     const agent = this.registry.getAgent(id)
     if (!agent) throw new Error('agent not found')
-    if (agent.tool === 'shell') throw new Error('the cli pane cannot be closed')
+    if (agent.tool === 'shell') throw new Error('the shell pane cannot be closed')
     this.registry.cancelPermissions(id)
     this.procs.get(id)?.kill()
     const proc = this.terms.get(id)?.proc
@@ -518,7 +518,7 @@ export class Daemon {
 
   createProject(name: string, dirs: string[]): Project {
     const project = this.registry.createProject(name, dirs)
-    // every project gets its own pinned cli pane in its main folder
+    // every project gets its own pinned shell pane in its main folder
     void this.spawnAgent({
       tool: 'shell',
       name: SHELL_NAME,
@@ -535,13 +535,13 @@ export class Daemon {
   }
 
   deleteProject(id: string): void {
-    // the project's cli pane goes away with the project
+    // the project's shell pane goes away with the project
     const pane = this.registry.listAgents().find((a) => a.tool === 'shell' && a.projectId === id)
     if (pane) this.disposeShellPane(pane.id)
     this.registry.deleteProject(id)
   }
 
-  /** Kills a pinned cli pane's PTY and removes it (and its events) from the console. */
+  /** Kills a pinned shell pane's PTY and removes it (and its events) from the console. */
   private disposeShellPane(id: string): void {
     this.registry.cancelPermissions(id)
     this.procs.get(id)?.kill()

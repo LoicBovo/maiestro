@@ -166,7 +166,7 @@ class PtyProc implements PtyProcess {
 export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterContext, handlers: PtyHandlers): PtyProcess {
   ensureSpawnHelperExecutable()
   const policy = opts.options?.vibeAgent ?? 'auto-approve'
-  // The pinned `cli` pane is a plain login shell (the user's $SHELL), not a
+  // The pinned `shell` pane is a plain login shell (the user's $SHELL), not a
   // coding CLI — no prompt, no hooks, no policy.
   let cli: string
   if (agent.tool === 'shell') {

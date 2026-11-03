@@ -41,11 +41,12 @@
   })
 
   function countFor(filter: 'all' | 'solo' | string): number {
-    return $agents.filter((a) => matchesFilter(a, filter)).length
+    // the pinned shell panes are per-project artifacts, not agents: never counted
+    return $agents.filter((a) => a.tool !== 'shell' && matchesFilter(a, filter)).length
   }
 
   function onCloseAgent(agent: typeof $agents[number]): void {
-    if (agent.tool === 'shell') return // the pinned cli pane cannot be closed
+    if (agent.tool === 'shell') return // the pinned shell pane cannot be closed
     const running = agent.status === 'running' || agent.status === 'blocked'
     if (running && !confirm('Stop and close this agent?\n"' + (agent.name ?? agent.task.slice(0, 80)) + '"')) return
     void removeAgent(agent.id)

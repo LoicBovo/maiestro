@@ -43,6 +43,11 @@ export class Registry extends EventEmitter {
       if (a.branch === undefined) a.branch = null
       // pre-name entries: normalize a missing name to null
       if (a.name == null) a.name = null
+      // panes created before the rename to 'shell' were labelled 'cli'
+      if (a.tool === 'shell' && a.name === 'cli') {
+        a.name = 'shell'
+        dirty = true
+      }
       // child processes don't survive a daemon restart
       if (a.status === 'running' || a.status === 'blocked') {
         a.status = 'stopped'
@@ -122,7 +127,7 @@ export class Registry extends EventEmitter {
     return this.projects.get(id)?.name ?? null
   }
 
-  /** Agents, newest first; the pinned `cli` shells always sit at the top. */
+  /** Agents, newest first; the pinned `shell` panes always sit at the top. */
   listAgents(): Agent[] {
     return [...this.agents.values()].sort((a, b) => {
       if (a.tool === 'shell' && b.tool !== 'shell') return -1
