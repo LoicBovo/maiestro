@@ -122,7 +122,7 @@ export class Registry extends EventEmitter {
     return this.projects.get(id)?.name ?? null
   }
 
-  /** Agents, newest first; the pinned `cli` shell always sits at the top. */
+  /** Agents, newest first; the pinned `cli` shells always sit at the top. */
   listAgents(): Agent[] {
     return [...this.agents.values()].sort((a, b) => {
       if (a.tool === 'shell' && b.tool !== 'shell') return -1

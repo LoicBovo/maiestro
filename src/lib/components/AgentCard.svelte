@@ -11,9 +11,13 @@
 
   $: shortTask = agent.task.length > 90 ? agent.task.slice(0, 87) + '…' : agent.task
   $: isShell = agent.tool === 'shell'
-  $: tileLabel =
-    agent.branch ??
-    (agent.projectId == null ? 'solo' : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo')
+  // a cli pane is pinned to its project — the tag names it, not the branch
+  $: tileLabel = isShell
+    ? agent.projectId == null
+      ? 'solo'
+      : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo'
+    : agent.branch ??
+      (agent.projectId == null ? 'solo' : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo')
 </script>
 
 <div

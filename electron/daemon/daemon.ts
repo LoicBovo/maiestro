@@ -148,7 +148,7 @@ export class Daemon {
     if (this.port !== cfg.port) {
       this.store.saveConfig({ port: this.port, token: this.token })
     }
-    await this.ensureShellAgent()
+    await this.ensureShellAgents()
     this.shellCwdTimer = setInterval(() => void this.trackShellCwd(), SHELL_CWD_POLL_MS)
   }
 
@@ -157,7 +157,7 @@ export class Daemon {
       clearInterval(this.shellCwdTimer)
       this.shellCwdTimer = null
     }
-    // persist where the pinned shell was left so it reopens there
+    // persist where the pinned shells were left so they reopen there
     await this.trackShellCwd()
     // mark it stopped before killing the PTY: the exit handler then skips
     // recording (and notifying) a spurious 'error' on every quit
@@ -260,15 +260,27 @@ export class Daemon {
   }
 
   /**
-   * The pinned `cli` pane: a plain shell shown in the agent list like an
-   * agent, labelled `cli`, that cannot be closed and reopens where it was
-   * left. Created once (at the process cwd — home when the app is launched
-   * from the Finder with cwd "/") and restarted in its recorded cwd on
-   * every daemon start.
+   * The pinned `cli` panes: plain login shells shown in the agent list like
+   * agents, labelled `cli`, that cannot be closed and reopen where they were
+   * left. One pane per project (opened in the project's main folder) plus one
+   * solo pane (at the process cwd — home when the app is launched from the
+   * Finder with cwd "/"). Each pane is created once and restarted in its
+   * recorded cwd on every daemon start.
    */
-  private async ensureShellAgent(): Promise<void> {
-    const shell = this.registry.listAgents().find((a) => a.tool === 'shell')
-    if (!shell) {
+  private async ensureShellAgents(): Promise<void> {
+    const shells = this.registry.listAgents().filter((a) => a.tool === 'shell')
+    for (const project of this.registry.listProjects()) {
+      if (shells.some((s) => s.projectId === project.id)) continue
+      await this.spawnAgent({
+        tool: 'shell',
+        name: SHELL_NAME,
+        task: '',
+        cwd: project.dirs[0],
+        projectId: project.id,
+        options: { mode: 'terminal' },
+      })
+    }
+    if (!shells.some((s) => s.projectId == null)) {
       const cwd = process.cwd() === '/' ? homedir() : process.cwd()
       await this.spawnAgent({
         tool: 'shell',
@@ -278,10 +290,11 @@ export class Daemon {
         projectId: null,
         options: { mode: 'terminal' },
       })
-      return
     }
-    if (shell.status === 'running') return
-    this.restartShell(shell)
+    for (const pane of this.registry.listAgents()) {
+      if (pane.tool !== 'shell' || pane.status === 'running') continue
+      this.restartShell(pane)
+    }
   }
 
   /** (Re)starts the pinned shell's PTY in its recorded working directory. */
@@ -504,7 +517,17 @@ export class Daemon {
   }
 
   createProject(name: string, dirs: string[]): Project {
-    return this.registry.createProject(name, dirs)
+    const project = this.registry.createProject(name, dirs)
+    // every project gets its own pinned cli pane in its main folder
+    void this.spawnAgent({
+      tool: 'shell',
+      name: SHELL_NAME,
+      task: '',
+      cwd: project.dirs[0],
+      projectId: project.id,
+      options: { mode: 'terminal' },
+    })
+    return project
   }
 
   updateProjectDirs(id: string, dirs: string[]): Project {
@@ -512,7 +535,21 @@ export class Daemon {
   }
 
   deleteProject(id: string): void {
+    // the project's cli pane goes away with the project
+    const pane = this.registry.listAgents().find((a) => a.tool === 'shell' && a.projectId === id)
+    if (pane) this.disposeShellPane(pane.id)
     this.registry.deleteProject(id)
+  }
+
+  /** Kills a pinned cli pane's PTY and removes it (and its events) from the console. */
+  private disposeShellPane(id: string): void {
+    this.registry.cancelPermissions(id)
+    this.procs.get(id)?.kill()
+    this.terms.get(id)?.proc?.kill()
+    this.terms.delete(id)
+    this.registry.setStatus(id, 'stopped')
+    this.registry.removeAgent(id)
+    this.store.deleteEvents(id)
   }
 
   private adapterCtx(): AdapterContext {
