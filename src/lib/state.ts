@@ -54,8 +54,7 @@ export const visibleAgents = derived(
   ([$agents, $project, $tool, $status]) =>
     $agents.filter(
       (a) =>
-        ($project === 'all' ||
-          ($project === 'solo' ? a.projectId == null : a.projectId === $project)) &&
+        matchesFilter(a, $project) &&
         ($tool === 'all' || a.tool === $tool) &&
         ($status === 'all' || a.status === $status),
     ),
@@ -66,10 +65,13 @@ export function projectName(id: string | null): string | null {
   return get(projects).find((p) => p.id === id)?.name ?? null
 }
 
-function matchesFilter(a: Agent, filter: ProjectFilter): boolean {
-  return (
-    filter === 'all' || (filter === 'solo' ? a.projectId == null : a.projectId === filter)
-  )
+/**
+ * Whether an agent belongs to a project filter. The pinned `cli` panes are
+ * per-project artifacts: they never appear in the "all" view.
+ */
+export function matchesFilter(a: Agent, filter: ProjectFilter): boolean {
+  if (filter === 'all') return a.tool !== 'shell'
+  return filter === 'solo' ? a.projectId == null : a.projectId === filter
 }
 
 /**
@@ -141,8 +143,9 @@ export async function init(): Promise<void> {
   const [list, projectList] = await Promise.all([api.listAgents(), api.listProjects()])
   agents.set(list)
   projects.set(projectList)
-  if (list.length > 0 && !list.some((a) => a.id === get(selectedId))) {
-    selectAgent(list[0].id)
+  if (!list.some((a) => a.id === get(selectedId))) {
+    const first = list.find((a) => matchesFilter(a, get(projectFilter)))
+    if (first) selectAgent(first.id)
   }
   api.onAgentsChanged((next) => {
     agents.set(next)
