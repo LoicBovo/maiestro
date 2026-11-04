@@ -94,3 +94,27 @@ Server (the daemon's local, token-authenticated API)
   permission asks are routed into the GUI for allow/deny decisions.
 - **Shell** — a PTY agent rendered in an embedded terminal, not counted as a
   coding agent in the UI.
+
+## UI regions
+
+The main window is four columns (the last one toggleable). The names match
+the CSS classes in `src/App.svelte` and the components, so code and
+conversation stay aligned.
+
+```
+├── Sidebar — aside.sidebar (src/App.svelte)
+│     Left column: Maiestro logo/title, "+ New agent" button, and the
+│     Projects list (All agents / Solo / user projects, with live agent
+│     counts). All agent/project filtering is driven from here.
+├── List pane — main.list-pane (src/App.svelte)
+│     The agent column: FilterBar (tool/status filters) on top and the
+│     AgentCard grid below. This is where agent tiles live.
+├── Detail pane — section.detail-pane (src/App.svelte → AgentDetail)
+│     Right pane for the selected agent: events, rename, resume prompt,
+│     permission Approve/Deny bar, and the TerminalPane (embedded xterm
+│     terminal) for shell agents. The terminal pane is a child of the
+│     detail pane, not a separate column.
+└── PRs pane — PullRequestsPane (aside.prs-pane)
+      Toggleable rightmost column: open pull requests per project.
+      Collapses to a thin rail (prs-rail) when closed.
+```
