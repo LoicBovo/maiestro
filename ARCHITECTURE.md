@@ -45,14 +45,15 @@ Maiestro (Electron app: GUI to manage multiple coding agents)
 │       ├── CLI — cli.ts              Standalone daemon entry (`npm run daemon`).
 │       └── Smoke — smoke.ts          Daemon smoke test (`npm run smoke`).
 └── Renderer (src/) — Svelte 5 UI
-    ├── App — App.svelte              Layout: agent list vs. detail + PRs pane.
+    ├── App — App.svelte              Layout: sidebar (Projects + Workers
+    │                                  sections) vs. detail + PRs pane.
     ├── API client — lib/api.ts        Typed wrapper over the preload bridge.
     ├── State — lib/state.ts           Svelte stores: agents, projects,
     │                                  filters (project/tool/status), selection,
     │                                  PR-pane open flag.
     ├── Types — lib/types.ts           Renderer-side model types.
     └── Components — lib/components/
-        ├── AgentCard          Agent tile in the list (status, name, tool).
+        ├── AgentCard          Agent tile in the Workers list (status, name, tool).
         ├── AgentDetail        Right pane: events, resume/prompt, permission
         │                      prompts, rename, remove.
         ├── TerminalPane       xterm.js view of PTY agents (attach/write/resize).

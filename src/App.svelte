@@ -271,23 +271,24 @@
         </button>
       {/if}
     </div>
-  </aside>
 
-  <main class="list-pane">
-    <FilterBar />
-    <div class="agent-list">
-      {#each $visibleAgents as agent (agent.id)}
-        <AgentCard
-          {agent}
-          selected={agent.id === $selectedId}
-          on:select={() => selectAgent(agent.id)}
-          on:remove={() => onCloseAgent(agent)}
-        />
-      {:else}
-        <div class="empty">No agents match. Spawn one with “+ New agent”.</div>
-      {/each}
-    </div>
-  </main>
+    <main class="list-pane">
+      <div class="workers-label">Workers</div>
+      <FilterBar />
+      <div class="agent-list">
+        {#each $visibleAgents as agent (agent.id)}
+          <AgentCard
+            {agent}
+            selected={agent.id === $selectedId}
+            on:select={() => selectAgent(agent.id)}
+            on:remove={() => onCloseAgent(agent)}
+          />
+        {:else}
+          <div class="empty">No agents match. Spawn one with “+ New agent”.</div>
+        {/each}
+      </div>
+    </main>
+  </aside>
 
   <section class="detail-pane">
     {#if $selectedAgent}
