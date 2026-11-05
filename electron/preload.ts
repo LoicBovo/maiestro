@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { Agent, AgentEvent, Project, ProjectPRs, SpawnOptions } from './daemon/types'
 
 export interface TerminalAttach {
@@ -28,6 +28,9 @@ const api = {
     ipcRenderer.invoke('terminal:write', agentId, data),
   resizeTerminal: (agentId: string, cols: number, rows: number): Promise<void> =>
     ipcRenderer.invoke('terminal:resize', agentId, cols, rows),
+  // `File.path` was removed in Electron 32; `webUtils` is the only way for a
+  // sandboxed renderer to learn the filesystem path of a dropped file.
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   listProjects: (): Promise<Project[]> => ipcRenderer.invoke('projects:list'),
   createProject: (name: string, dirs: string[]): Promise<Project> =>
     ipcRenderer.invoke('projects:create', name, dirs),

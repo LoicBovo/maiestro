@@ -24,6 +24,8 @@ interface MaiestroApi {
   attachTerminal(agentId: string): Promise<TerminalAttach | null>
   writeTerminal(agentId: string, data: string): Promise<void>
   resizeTerminal(agentId: string, cols: number, rows: number): Promise<void>
+  /** Filesystem path of a dragged & dropped file (preload bridge to webUtils). */
+  getPathForFile(file: File): string
   listProjects(): Promise<Project[]>
   createProject(name: string, dirs: string[]): Promise<Project>
   updateProjectDirs(id: string, dirs: string[]): Promise<Project>

@@ -76,11 +76,42 @@
       }
     })
     observer.observe(container)
+
+    // Dragging a file from the Finder onto the terminal inserts its path,
+    // like iTerm or the VS Code terminal do (browsers ship no default for it)
+    container.addEventListener('dragover', onDragOver)
+    container.addEventListener('drop', onDrop)
   })
+
+  /** Shell-quotes a dropped path so whitespace survives being typed into the CLI. */
+  function quotePath(path: string): string {
+    return /[^\w@%+=:,./-]/.test(path) ? `'${path.replace(/'/g, `'\\''`)}'` : path
+  }
+
+  function onDragOver(e: DragEvent) {
+    if (!e.dataTransfer?.types.includes('Files')) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  function onDrop(e: DragEvent) {
+    const files = Array.from(e.dataTransfer?.files ?? [])
+    if (!files.length) return
+    e.preventDefault()
+    e.stopPropagation()
+    const text = files
+      .map((f) => api.getPathForFile(f))
+      .map(quotePath)
+      .join(' ')
+    term?.focus()
+    void api.writeTerminal(agent.id, text)
+  }
 
   onDestroy(() => {
     unsubscribe?.()
     observer?.disconnect()
+    container?.removeEventListener('dragover', onDragOver)
+    container?.removeEventListener('drop', onDrop)
     term?.dispose()
   })
 </script>
