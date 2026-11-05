@@ -21,7 +21,7 @@
 
   onMount(() => {
     term = new Terminal({
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontFamily: "'JetBrainsMono Nerd Font', ui-monospace, SFMono-Regular, Menlo, monospace",
       fontSize: 12.5,
       theme: {
         background: '#0e1014',
