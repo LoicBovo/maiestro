@@ -115,26 +115,3 @@ export interface ProjectPRs {
   /** per-directory failures (no `gh`, not a repo, no auth, ...) */
   errors: { dir: string; message: string }[]
 }
-
-export type TerminalStatus = 'running' | 'exited'
-
-/** An interactive CLI pane (PTY-backed shell) attached to a project. */
-export interface TerminalSession {
-  id: string
-  projectId: string | null
-  title: string
-  cwd: string
-  pid: number | null
-  createdAt: string
-  status: TerminalStatus
-  exitCode: number | null
-}
-
-export interface TerminalSpawnOptions {
-  projectId?: string | null
-  cwd: string
-  title?: string
-  shell?: string
-  cols?: number
-  rows?: number
-}

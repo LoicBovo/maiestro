@@ -1,6 +1,7 @@
 import { spawnLineProcess, type LineProcess } from '../process'
 import type { Registry } from '../registry'
 import type { Agent, AgentEventType, SpawnOptions } from '../types'
+import { resolveCli } from './cli-path'
 
 export interface AdapterContext {
   registry: Registry
@@ -114,7 +115,9 @@ export function startClaudeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterC
       },
     }),
   ]
-  const proc = spawnLineProcess('claude', args, { cwd: agent.cwd })
+  // resolve to an absolute path: a Finder/Dock launch gives the main process
+  // a sparse PATH without ~/.local/bin, and the CLI would never be found
+  const proc = spawnLineProcess(resolveCli('claude'), args, { cwd: agent.cwd })
   ctx.registry.updateAgent(agent.id, { pid: proc.pid })
 
   proc.onLine((line) => handleLine(agent, line, ctx))

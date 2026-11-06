@@ -122,6 +122,16 @@
       creatingProject = false
     }
   }
+
+  function onDeleteProject(project: typeof $projects[number]): void {
+    if (
+      !confirm(
+        'Delete project "' + project.name + '"?\nIts agents become solo agents; its shell pane is closed.',
+      )
+    )
+      return
+    void deleteProject(project.id)
+  }
 </script>
 
 <div class="app" class:prs-closed={!$prsPaneOpen}>
@@ -165,7 +175,7 @@
           >
             +
           </button>
-          <button class="project-close" title="Delete project" on:click={() => deleteProject(p.id)}>
+          <button class="project-close" title="Delete project" on:click={() => onDeleteProject(p)}>
             x
           </button>
         </div>

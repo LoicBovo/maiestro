@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { appendFileSync, chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Agent, AgentEvent, Project } from './types'
 
@@ -88,5 +88,12 @@ export class Store {
 
   saveConfig(cfg: DaemonConfig): void {
     this.writeJson('config.json', cfg)
+    // config.json carries the API bearer token — keep it out of other local
+    // users' hands even though the data dir is per-user anyway
+    try {
+      chmodSync(this.path('config.json'), 0o600)
+    } catch {
+      // platform without POSIX modes (Windows) — nothing to tighten
+    }
   }
 }

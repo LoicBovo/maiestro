@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto'
-import { execFile, execFileSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -44,30 +44,37 @@ const SHELL_NAME = 'shell'
 /** How often the pinned shell's live working directory is captured (ms). */
 const SHELL_CWD_POLL_MS = 5000
 
+const execFileAsync = promisify(execFile)
+
 /**
  * Current working directory of a process, or null when it cannot be
  * determined (lsof on macOS, /proc on Linux). Used to remember where the
- * pinned `shell` pane was left when the app quits.
+ * pinned `shell` pane was left when the app quits. Async on purpose: this
+ * polls every few seconds per shell pane, and must never block the Electron
+ * main thread.
  */
-function processCwd(pid: number): string | null {
-  try {
-    if (process.platform === 'linux') return readlinkSync('/proc/' + pid + '/cwd')
-    if (process.platform === 'darwin') {
-      for (const bin of ['/usr/sbin/lsof', 'lsof']) {
-        try {
-          const out = execFileSync(bin, ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], {
-            encoding: 'utf8',
-            timeout: 2000,
-          })
-          const line = out.split('\n').find((l) => l.startsWith('n'))
-          if (line) return line.slice(1)
-        } catch {
-          // candidate lsof path missing — try the next
-        }
+async function processCwd(pid: number): Promise<string | null> {
+  if (process.platform === 'linux') {
+    try {
+      return readlinkSync('/proc/' + pid + '/cwd')
+    } catch {
+      return null
+    }
+  }
+  if (process.platform === 'darwin') {
+    for (const bin of ['/usr/sbin/lsof', 'lsof']) {
+      try {
+        const { stdout } = await execFileAsync(
+          bin,
+          ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'],
+          { encoding: 'utf8', timeout: 2000 },
+        )
+        const line = stdout.split('\n').find((l) => l.startsWith('n'))
+        if (line) return line.slice(1)
+      } catch {
+        // candidate lsof path missing / process gone — try the next
       }
     }
-  } catch {
-    // cwd not available — the caller keeps the recorded one
   }
   return null
 }
@@ -75,7 +82,7 @@ function processCwd(pid: number): string | null {
 /** Current git branch of a directory, or null when it is not a git repo. */
 async function gitBranch(cwd: string): Promise<string | null> {
   try {
-    const { stdout } = await promisify(execFile)(
+    const { stdout } = await execFileAsync(
       'git',
       ['rev-parse', '--abbrev-ref', 'HEAD'],
       { cwd, timeout: 2000 },
@@ -316,7 +323,7 @@ export class Daemon {
   private async trackShellCwd(): Promise<void> {
     for (const agent of this.registry.listAgents()) {
       if (agent.tool !== 'shell' || !agent.pid || agent.status !== 'running') continue
-      const cwd = processCwd(agent.pid)
+      const cwd = await processCwd(agent.pid)
       if (!cwd || cwd === agent.cwd) continue
       this.registry.updateAgent(agent.id, { cwd, branch: await gitBranch(cwd) })
     }

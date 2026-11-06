@@ -62,10 +62,9 @@ export class Registry extends EventEmitter {
       a.pendingPermission = null
       this.agents.set(a.id, a)
     }
-    for (const p of store.loadProjects()) this.projects.set(p.id, p)
+    // migrate pre-list entries that only had a single cwd, then load
     let projectsDirty = false
     for (const p of store.loadProjects()) {
-      // migrate pre-list entries that only had a single cwd
       if (!p.dirs) {
         const legacy = p as Project & { cwd?: string }
         p.dirs = legacy.cwd ? [legacy.cwd] : []
@@ -163,17 +162,19 @@ export class Registry extends EventEmitter {
     return true
   }
 
-  setStatus(id: string, status: AgentStatus, extra: Partial<Agent> = {}): void {    const a = this.agents.get(id)
+  setStatus(id: string, status: AgentStatus, extra: Partial<Agent> = {}): void {
+    const a = this.agents.get(id)
     if (!a) return
     const from = a.status
     if (from === status) {
       if (Object.keys(extra).length > 0) this.updateAgent(id, extra)
       return
     }
+    const patch = { ...extra }
     if (status === 'done' || status === 'error' || status === 'stopped') {
-      extra.endedAt = new Date().toISOString()
+      patch.endedAt = new Date().toISOString()
     }
-    Object.assign(a, extra, { status })
+    Object.assign(a, patch, { status })
     this.persist()
     this.emit('agents')
     this.emit('status', { agent: a, from, to: status })

@@ -1,5 +1,6 @@
 import { spawnLineProcess, type LineProcess } from '../process'
 import type { Agent, AgentEventType, SpawnOptions } from '../types'
+import { resolveCli } from './cli-path'
 import type { AdapterContext } from './claude'
 
 const DEFAULT_MAX_TURNS = 25
@@ -95,7 +96,9 @@ export function startVibeAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCon
   ]
   // vibe headless blocks reading stdin when stdin is an open pipe — ignore it
   // so the agent streams output immediately instead of waiting for EOF.
-  const proc = spawnLineProcess('vibe', args, { cwd: agent.cwd, stdin: 'ignore' })
+  // resolve to an absolute path: a Finder/Dock launch gives the main process
+  // a sparse PATH without ~/.local/bin, and the CLI would never be found
+  const proc = spawnLineProcess(resolveCli('vibe'), args, { cwd: agent.cwd, stdin: 'ignore' })
   ctx.registry.updateAgent(agent.id, { pid: proc.pid })
 
   proc.onLine((line) => handleLine(agent, line, ctx, policy))
