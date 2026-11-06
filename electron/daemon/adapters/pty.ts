@@ -188,15 +188,22 @@ export function startPtyAgent(agent: Agent, opts: SpawnOptions, ctx: AdapterCont
     args = [...resumeArgs, '--agent', policy]
   }
 
+  // GUI-launched apps have no LANG/LC_* on macOS, and clipboard tools in the
+  // embedded shell (pbcopy/pbpaste) then transcode to Mac OS Roman, turning
+  // é into √©. Force a UTF-8 locale so every pane talks UTF-8 everywhere.
+  const utf8Locale = process.env.LC_ALL || process.env.LANG || 'en_US.UTF-8'
   const term = pty.spawn(cli, args, {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
     cwd: agent.cwd,
+    encoding: 'utf8',
     env: {
       ...process.env,
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
+      LANG: utf8Locale,
+      LC_CTYPE: utf8Locale,
     } as Record<string, string>,
   })
 
