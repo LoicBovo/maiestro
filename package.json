@@ -13,6 +13,7 @@
     "postdist": "codesign --force --deep --sign - release/mac-arm64/Maiestro.app",
     "daemon": "tsx electron/daemon/cli.ts",
     "smoke": "tsx electron/daemon/smoke.ts",
+    "test": "tsx --test electron/daemon/store.test.ts electron/daemon/registry.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "build": {

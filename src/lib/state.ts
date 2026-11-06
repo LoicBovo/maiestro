@@ -93,9 +93,10 @@ export function setProjectFilter(filter: ProjectFilter): void {
 
 export function selectAgent(id: string): void {
   selectedId.set(id)
-  api.getEvents(id).then((events) => {
-    eventsByAgent.update((m) => ({ ...m, [id]: events }))
-  })
+  // Note: no getEvents fetch here — the event-log view is disabled for now
+  // (see AgentDetail.svelte) and reading the full events.jsonl on every
+  // selection was pure overhead. Live events still accumulate in
+  // eventsByAgent via onAgentEvent; re-add the fetch when the log returns.
 }
 
 /**
@@ -168,8 +169,6 @@ export async function init(): Promise<void> {
   }
   api.onAgentsChanged((next) => {
     agents.set(next)
-    const sel = next.find((a) => a.id === get(selectedId))
-    if (sel && !get(eventsByAgent)[sel.id]) selectAgent(sel.id)
   })
   api.onProjectsChanged((next) => {
     projects.set(next)

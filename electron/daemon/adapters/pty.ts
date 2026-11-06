@@ -1,33 +1,10 @@
-import { accessSync, chmodSync, constants, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { accessSync, chmodSync, constants, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import * as pty from 'node-pty'
 import type { LineProcess } from '../process'
 import type { Agent, SpawnOptions } from '../types'
+import { resolveCli } from './cli-path'
 import type { AdapterContext } from './claude'
-
-/**
- * Resolves the CLI to an absolute path so the embedded terminal works even
- * when the Electron main process has a sparser PATH than an interactive shell.
- */
-function resolveCli(tool: 'claude' | 'vibe'): string {
-  const dirs = [
-    ...(process.env.PATH ?? '').split(':').filter(Boolean),
-    join(homedir(), '.local', 'bin'),
-  ]
-  for (const dir of dirs) {
-    const p = join(dir, tool)
-    try {
-      statSync(p)
-      accessSync(p, constants.X_OK)
-      return p
-    } catch {
-      // not there / not executable — keep looking
-    }
-  }
-  // fall back to a bare name and hope the shell finds it
-  return tool
-}
 
 /**
  * node-pty spawns its `spawn-helper` binary; on some installs (registry
@@ -101,6 +78,9 @@ function writeClaudeHookSettings(agentId: string, ctx: AdapterContext): string {
   mkdirSync(join(ctx.dataDir, 'bin'), { recursive: true })
   const file = join(ctx.dataDir, 'bin', 'claude-hooks-' + agentId + '.json')
   writeFileSync(file, JSON.stringify(settings))
+  // the file embeds the daemon's bearer token in the curl command line —
+  // lock it down even though the data dir is per-user anyway
+  chmodSync(file, 0o600)
   return file
 }
 

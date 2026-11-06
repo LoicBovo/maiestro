@@ -22,6 +22,8 @@ let win: BrowserWindow | null = null
 let daemon: Daemon | null = null
 // Agent to reveal when the renderer is ready; set by a notification click.
 let pendingFocusAgentId: string | null = null
+// Guards the async shutdown against the second before-quit app.exit() skips.
+let quitting = false
 
 function notify(title: string, body: string, urgent = false, agentId?: string): void {
   if (Notification.isSupported()) {
@@ -156,6 +158,17 @@ app.on('window-all-closed', () => {
   // keep running
 })
 
-app.on('before-quit', () => {
-  void daemon?.stopAll()
+app.on('before-quit', (e) => {
+  // stopAll persists where the shell panes were left, which takes a moment
+  // (lsof + git per pane). Hold the quit open until it is done — quitting
+  // right away would race the persistence and lose the recorded cwds.
+  if (quitting) return
+  e.preventDefault()
+  quitting = true
+  const stopped = daemon ? daemon.stopAll() : Promise.resolve()
+  void stopped
+    .catch(() => {
+      // persistence failures must not block quitting
+    })
+    .then(() => app.exit(0))
 })
