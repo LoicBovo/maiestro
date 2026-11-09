@@ -10,7 +10,7 @@
 
   const policies = ['ask', 'plan', 'accept-edits', 'smart-approve', 'auto-approve']
 
-  let tool: AgentTool = 'claude'
+  let tool: AgentTool | '' = ''
   let projectId = initialProjectId
   let name = ''
   let cwd = ''
@@ -40,6 +40,7 @@
   }
 
   async function submit(): Promise<void> {
+    if (!tool) return
     submitting = true
     error = ''
     try {
@@ -77,6 +78,7 @@
       <label>
         Tool
         <select bind:value={tool}>
+          <option value="" disabled selected>Select a tool…</option>
           <option value="claude">Claude Code</option>
           <option value="vibe">Mistral Vibe</option>
         </select>
@@ -123,7 +125,7 @@
       {/if}
       <div class="modal-actions">
         <button type="button" class="btn" on:click={() => dispatch('close')}>Cancel</button>
-        <button type="submit" class="btn primary" disabled={submitting}>
+        <button type="submit" class="btn primary" disabled={submitting || !tool}>
           {submitting ? 'Spawning…' : 'Spawn'}
         </button>
       </div>
