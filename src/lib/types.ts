@@ -1,6 +1,9 @@
 /** 'shell' is a pinned pane (one per project plus one solo): a plain login shell, not a coding agent */
 export type AgentTool = 'claude' | 'vibe' | 'shell'
 
+/** Agent pre-selected by a project in the spawn dialog; 'shell is never preferred. */
+export type PreferredAgentTool = Exclude<AgentTool, 'shell'>
+
 export type AgentStatus = 'running' | 'blocked' | 'done' | 'error' | 'stopped'
 
 export interface PendingPermission {
@@ -15,6 +18,8 @@ export interface Project {
   name: string
   /** working directories of the project; dirs[0] is the main folder */
   dirs: string[]
+  /** agent tool pre-selected in the spawn dialog; null = none */
+  preferredTool: PreferredAgentTool | null
   createdAt: string
 }
 

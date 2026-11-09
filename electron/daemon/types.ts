@@ -8,12 +8,20 @@ export interface PendingPermission {
   input: Record<string, unknown>
 }
 
+/**
+ * Tool pre-selected in the spawn dialog for agents of this project;
+ * null means no preference (the tool list starts unselected).
+ */
+export type PreferredAgentTool = Exclude<AgentTool, 'shell'>
+
 /** A user-defined pool that groups agents and terminals around one codebase. */
 export interface Project {
   id: string
   name: string
   /** working directories of the project; dirs[0] is the main folder */
   dirs: string[]
+  /** preferred agent tool (spawn dialog default); null = none */
+  preferredTool: PreferredAgentTool | null
   createdAt: string
 }
 

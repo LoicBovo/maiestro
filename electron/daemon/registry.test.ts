@@ -112,14 +112,25 @@ test('createProject validates, dedupes and emits; deleteProject detaches agents'
   const r = new Registry(store)
   assert.throws(() => r.createProject('  ', ['/a']))
   assert.throws(() => r.createProject('name', [' ']))
-  const p = r.createProject('name', ['/a', '/a', ' /b '])
+  assert.throws(() => r.createProject('name', ['/a'], 'shell'))
+  const p = r.createProject('name', ['/a', '/a', ' /b '], 'vibe')
   assert.deepEqual(p.dirs, ['/a', '/b'])
+  assert.equal(p.preferredTool, 'vibe')
   assert.deepEqual(store.loadProjects()[0].dirs, ['/a', '/b'])
+  assert.equal(store.loadProjects()[0].preferredTool, 'vibe')
+  // no preference recorded by default
+  const p2 = r.createProject('other', ['/c'])
+  assert.equal(p2.preferredTool, null)
+  // update replaces dirs and the preference; undefined keeps the preference
+  assert.equal(r.updateProject(p.id, ['/a'], null).preferredTool, null)
+  assert.equal(r.updateProject(p.id, ['/a'], 'claude').preferredTool, 'claude')
+  assert.equal(r.updateProject(p.id, ['/a']).preferredTool, 'claude')
+  assert.throws(() => r.updateProject(p.id, ['/a'], 'codex'))
   r.addAgent(agent('1', { projectId: p.id }))
   r.deleteProject(p.id)
   assert.equal(r.getProject(p.id), undefined)
   assert.equal(r.getAgent('1')?.projectId, null)
-  assert.throws(() => r.updateProjectDirs(p.id, ['/a']))
+  assert.throws(() => r.updateProject(p.id, ['/a']))
 })
 
 test('permission request blocks the agent, decision resolves and unblocks it', async () => {

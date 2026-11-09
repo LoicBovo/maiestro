@@ -7,6 +7,7 @@ import type {
   AgentStatus,
   PendingPermission,
   PermissionRequest,
+  PreferredAgentTool,
   Project,
 } from './types'
 
@@ -15,6 +16,18 @@ export type PermissionDecision =
   | { behavior: 'deny'; message: string }
 
 const PERMISSION_TIMEOUT_MS = 10 * 60 * 1000
+
+/**
+ * Normalizes an incoming preferred-tool value.
+ * - undefined: no opinion (update keeps the current value, create defaults to none)
+ * - null or '': explicit "no preference"
+ */
+function normalizePreferredTool(raw: unknown): PreferredAgentTool | null | undefined {
+  if (raw === undefined) return undefined
+  if (raw == null || raw === '') return null
+  if (raw !== 'claude' && raw !== 'vibe') throw new Error('unknown preferred agent: ' + raw)
+  return raw
+}
 
 interface PendingEntry {
   req: PermissionRequest
@@ -70,6 +83,11 @@ export class Registry extends EventEmitter {
         p.dirs = legacy.cwd ? [legacy.cwd] : []
         projectsDirty = true
       }
+      // pre-preference entries have no preferredTool recorded
+      if (p.preferredTool === undefined) {
+        p.preferredTool = null
+        projectsDirty = true
+      }
       this.projects.set(p.id, p)
     }
     if (projectsDirty) store.saveProjects(this.listProjects())
@@ -84,7 +102,11 @@ export class Registry extends EventEmitter {
     return this.projects.get(id)
   }
 
-  createProject(name: string, dirs: string[]): Project {
+  createProject(
+    name: string,
+    dirs: string[],
+    preferredTool: unknown = null,
+  ): Project {
     const clean = name.trim()
     if (!clean) throw new Error('project name is required')
     const cleanDirs = [...new Set(dirs.map((d) => d?.trim() ?? '').filter(Boolean))]
@@ -93,6 +115,7 @@ export class Registry extends EventEmitter {
       id: randomUUID(),
       name: clean,
       dirs: cleanDirs,
+      preferredTool: normalizePreferredTool(preferredTool) ?? null,
       createdAt: new Date().toISOString(),
     }
     this.projects.set(project.id, project)
@@ -101,12 +124,14 @@ export class Registry extends EventEmitter {
     return project
   }
 
-  updateProjectDirs(id: string, dirs: string[]): Project {
+  updateProject(id: string, dirs: string[], preferredTool?: unknown): Project {
     const project = this.projects.get(id)
     if (!project) throw new Error('project not found')
     const cleanDirs = [...new Set(dirs.map((d) => d?.trim() ?? '').filter(Boolean))]
     if (cleanDirs.length === 0) throw new Error('a main folder is required')
     project.dirs = cleanDirs
+    const cleanPreferred = normalizePreferredTool(preferredTool)
+    if (cleanPreferred !== undefined) project.preferredTool = cleanPreferred
     this.store.saveProjects(this.listProjects())
     this.emit('projects')
     return project

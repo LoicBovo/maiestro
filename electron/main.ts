@@ -110,10 +110,14 @@ function registerIpc(d: Daemon): void {
     d.resizeTerminal(id, cols, rows),
   )
   ipcMain.handle('projects:list', () => d.listProjects())
-  ipcMain.handle('projects:create', (_e, name: string, dirs: string[]) => d.createProject(name, dirs))
   ipcMain.handle(
-    'projects:update-dirs',
-    (_e, id: string, dirs: string[]) => d.updateProjectDirs(id, dirs),
+    'projects:create',
+    (_e, name: string, dirs: string[], preferredTool: string | null) => d.createProject(name, dirs, preferredTool),
+  )
+  ipcMain.handle(
+    'projects:update',
+    (_e, id: string, dirs: string[], preferredTool: string | null) =>
+      d.updateProject(id, dirs, preferredTool),
   )
   ipcMain.handle('projects:delete', (_e, id: string) => d.deleteProject(id))
   ipcMain.handle('projects:open-prs', async (_e, id: string) => {

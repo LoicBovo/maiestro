@@ -22,17 +22,20 @@
     selectedAgent,
     selectedId,
     setProjectFilter,
-    updateProjectDirs,
+    updateProject,
     visibleAgents,
   } from './lib/state'
+  import type { PreferredAgentTool } from './lib/types'
 
   let showSpawn = false
   let showNewProject = false
   let newProjectName = ''
   let newProjectDirs: string[] = ['']
+  let newProjectPreferred: PreferredAgentTool | '' = ''
   let creatingProject = false
   let editingProjectId: string | null = null
   let editProjectDirs: string[] = []
+  let editProjectPreferred: PreferredAgentTool | '' = ''
   let savingProject = false
 
   onMount(() => {
@@ -55,6 +58,7 @@
   function resetNewProjectForm(): void {
     newProjectName = ''
     newProjectDirs = ['']
+    newProjectPreferred = ''
   }
 
   function addProjectDir(): void {
@@ -75,11 +79,13 @@
   function startEditProject(project: typeof $projects[number]): void {
     editingProjectId = project.id
     editProjectDirs = [...project.dirs]
+    editProjectPreferred = project.preferredTool ?? ''
   }
 
   function cancelEditProject(): void {
     editingProjectId = null
     editProjectDirs = []
+    editProjectPreferred = ''
   }
 
   function addEditProjectDir(): void {
@@ -98,12 +104,12 @@
     }
   }
 
-  async function submitProjectDirs(id: string): Promise<void> {
+  async function submitProject(id: string): Promise<void> {
     const dirs = editProjectDirs.map((d) => d.trim()).filter(Boolean)
     if (dirs.length === 0 || savingProject) return
     savingProject = true
     try {
-      await updateProjectDirs(id, dirs)
+      await updateProject(id, dirs, editProjectPreferred || null)
       cancelEditProject()
     } finally {
       savingProject = false
@@ -115,7 +121,7 @@
     if (!newProjectName.trim() || !dirs[0] || creatingProject) return
     creatingProject = true
     try {
-      await createProject(newProjectName.trim(), dirs)
+      await createProject(newProjectName.trim(), dirs, newProjectPreferred || null)
       resetNewProjectForm()
       showNewProject = false
     } finally {
@@ -180,7 +186,7 @@
           </button>
         </div>
         {#if editingProjectId === p.id}
-          <form class="new-project-form" on:submit|preventDefault={() => submitProjectDirs(p.id)}>
+          <form class="new-project-form" on:submit|preventDefault={() => submitProject(p.id)}>
             {#each editProjectDirs as dir, i (i)}
               <div class="dir-row">
                 <input
@@ -208,6 +214,14 @@
                 {/if}
               </div>
             {/each}
+            <label>
+              Preferred agent
+              <select bind:value={editProjectPreferred}>
+                <option value="">None</option>
+                <option value="claude">Claude Code</option>
+                <option value="vibe">Mistral Vibe</option>
+              </select>
+            </label>
             <button type="button" class="add-dir-btn" on:click={addEditProjectDir}>
               + Add folder
             </button>
@@ -254,6 +268,14 @@
               {/if}
             </div>
           {/each}
+          <label>
+            Preferred agent
+            <select bind:value={newProjectPreferred}>
+              <option value="">None</option>
+              <option value="claude">Claude Code</option>
+              <option value="vibe">Mistral Vibe</option>
+            </select>
+          </label>
           <button type="button" class="add-dir-btn" on:click={addProjectDir}>+ Add folder</button>
           <div class="new-project-actions">
             <button
