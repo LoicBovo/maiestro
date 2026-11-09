@@ -523,8 +523,8 @@ export class Daemon {
     return this.registry.listProjects()
   }
 
-  createProject(name: string, dirs: string[]): Project {
-    const project = this.registry.createProject(name, dirs)
+  createProject(name: string, dirs: string[], preferredTool?: string | null): Project {
+    const project = this.registry.createProject(name, dirs, preferredTool)
     // every project gets its own pinned shell pane in its main folder
     void this.spawnAgent({
       tool: 'shell',
@@ -537,8 +537,8 @@ export class Daemon {
     return project
   }
 
-  updateProjectDirs(id: string, dirs: string[]): Project {
-    return this.registry.updateProjectDirs(id, dirs)
+  updateProject(id: string, dirs: string[], preferredTool?: string | null): Project {
+    return this.registry.updateProject(id, dirs, preferredTool)
   }
 
   deleteProject(id: string): void {

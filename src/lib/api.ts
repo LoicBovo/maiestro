@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentEvent,
+  PreferredAgentTool,
   Project,
   ProjectPRs,
   SpawnOptions,
@@ -27,8 +28,16 @@ interface MaiestroApi {
   /** Filesystem path of a dragged & dropped file (preload bridge to webUtils). */
   getPathForFile(file: File): string
   listProjects(): Promise<Project[]>
-  createProject(name: string, dirs: string[]): Promise<Project>
-  updateProjectDirs(id: string, dirs: string[]): Promise<Project>
+  createProject(
+    name: string,
+    dirs: string[],
+    preferredTool: PreferredAgentTool | null,
+  ): Promise<Project>
+  updateProject(
+    id: string,
+    dirs: string[],
+    preferredTool: PreferredAgentTool | null,
+  ): Promise<Project>
   deleteProject(id: string): Promise<void>
   listProjectPRs(projectId: string): Promise<ProjectPRs>
   openExternal(url: string): Promise<void>

@@ -1,6 +1,6 @@
 import { derived, get, writable } from 'svelte/store'
 import { api } from './api'
-import type { Agent, AgentEvent, AgentStatus, AgentTool, Project } from './types'
+import type { Agent, AgentEvent, AgentStatus, AgentTool, PreferredAgentTool, Project } from './types'
 
 /** 'all' = every agent, 'solo' = agents without a project, otherwise a project id */
 export type ProjectFilter = 'all' | 'solo' | string
@@ -141,14 +141,22 @@ export async function renameAgent(id: string, name: string): Promise<void> {
   await api.renameAgent(id, name)
 }
 
-export async function createProject(name: string, dirs: string[]): Promise<void> {
-  const project = await api.createProject(name, dirs)
+export async function createProject(
+  name: string,
+  dirs: string[],
+  preferredTool: PreferredAgentTool | null,
+): Promise<void> {
+  const project = await api.createProject(name, dirs, preferredTool)
   projects.update((list) => [...list, project])
 }
 
-/** Replaces a project's directory list; the store refreshes via projects:changed. */
-export async function updateProjectDirs(id: string, dirs: string[]): Promise<void> {
-  const project = await api.updateProjectDirs(id, dirs)
+/** Replaces a project's directory list and preferred agent; the store refreshes via projects:changed. */
+export async function updateProject(
+  id: string,
+  dirs: string[],
+  preferredTool: PreferredAgentTool | null,
+): Promise<void> {
+  const project = await api.updateProject(id, dirs, preferredTool)
   projects.update((list) => list.map((p) => (p.id === id ? project : p)))
 }
 

@@ -32,10 +32,10 @@ const api = {
   // sandboxed renderer to learn the filesystem path of a dropped file.
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   listProjects: (): Promise<Project[]> => ipcRenderer.invoke('projects:list'),
-  createProject: (name: string, dirs: string[]): Promise<Project> =>
-    ipcRenderer.invoke('projects:create', name, dirs),
-  updateProjectDirs: (id: string, dirs: string[]): Promise<Project> =>
-    ipcRenderer.invoke('projects:update-dirs', id, dirs),
+  createProject: (name: string, dirs: string[], preferredTool: string | null = null): Promise<Project> =>
+    ipcRenderer.invoke('projects:create', name, dirs, preferredTool),
+  updateProject: (id: string, dirs: string[], preferredTool: string | null): Promise<Project> =>
+    ipcRenderer.invoke('projects:update', id, dirs, preferredTool),
   deleteProject: (id: string): Promise<void> => ipcRenderer.invoke('projects:delete', id),
   listProjectPRs: (projectId: string): Promise<ProjectPRs> =>
     ipcRenderer.invoke('projects:open-prs', projectId),

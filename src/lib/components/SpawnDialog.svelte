@@ -31,6 +31,11 @@
     if (!cwd.trim() || (prev && prev.dirs.includes(cwd))) {
       cwd = selectedProject?.dirs[0] ?? ''
     }
+    // a project with a preferred agent pre-selects it; the user can still
+    // change the tool afterwards
+    if (selectedProject?.preferredTool) {
+      tool = selectedProject.preferredTool
+    }
     lastProjectId = projectId
   }
 

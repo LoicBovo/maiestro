@@ -135,7 +135,7 @@ export class Server {
       const body = await readBody(req)
       try {
         const dirs = Array.isArray(body?.dirs) ? body.dirs.map(String) : []
-        const project = this.daemon.createProject(String(body?.name ?? ''), dirs)
+        const project = this.daemon.createProject(String(body?.name ?? ''), dirs, body?.preferredTool ?? null)
         sendJson(res, 201, { project })
       } catch (err) {
         sendJson(res, 400, { error: String((err as Error)?.message ?? err) })
@@ -146,7 +146,7 @@ export class Server {
       const body = await readBody(req)
       try {
         const dirs = Array.isArray(body?.dirs) ? body.dirs.map(String) : []
-        const project = this.daemon.updateProjectDirs(projectMatch[1], dirs)
+        const project = this.daemon.updateProject(projectMatch[1], dirs, body?.preferredTool ?? undefined)
         sendJson(res, 200, { project })
       } catch (err) {
         sendJson(res, 400, { error: String((err as Error)?.message ?? err) })
