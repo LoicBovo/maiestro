@@ -45,8 +45,8 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
    below it. The 3rd column is the Open PRs pane (300px expanded, 30px
    collapsed rail). The main process resizes the window by the same difference
    (see PRS_PANE_DELTA in electron/main.ts). */
-.app { display: grid; grid-template-columns: 330px 1fr 300px; height: 100vh; }
-.app.prs-closed { grid-template-columns: 330px 1fr 30px; }
+.app { display: grid; grid-template-columns: 297px 1fr 300px; height: 100vh; }
+.app.prs-closed { grid-template-columns: 297px 1fr 30px; }
 
 /* ---- sidebar ---- */
 .sidebar { background: var(--bg-pane); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
@@ -114,7 +114,6 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 .task-text { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agent-name { margin-top: 3px; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agent-name + .task-text { color: var(--text-dim); font-size: 12.5px; }
-.last-msg { margin-top: 3px; color: var(--text-faint); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- status badge ---- */
 .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
