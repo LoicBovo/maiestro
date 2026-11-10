@@ -152,14 +152,12 @@
     <div class="projects">
       <div class="projects-label">Projects</div>
       <div class="project-item" class:active={$projectFilter === 'all'}>
-        <button class="project-select" on:click={() => setProjectFilter('all')}>
-          All agents <span class="project-count">{countFor('all')}</span>
-        </button>
+        <button class="project-select" on:click={() => setProjectFilter('all')}>All agents</button>
+        <span class="project-count">{countFor('all')}</span>
       </div>
       <div class="project-item" class:active={$projectFilter === 'solo'}>
-        <button class="project-select" on:click={() => setProjectFilter('solo')}>
-          Solo <span class="project-count">{countFor('solo')}</span>
-        </button>
+        <button class="project-select" on:click={() => setProjectFilter('solo')}>Solo</button>
+        <span class="project-count">{countFor('solo')}</span>
       </div>
       {#each $projects as p (p.id)}
         <div
@@ -172,7 +170,7 @@
             title={p.dirs.join('\n')}
             on:click={() => setProjectFilter(p.id)}
           >
-            {p.name} <span class="project-count">{countFor(p.id)}</span>
+            {p.name}
           </button>
           <button
             class="project-edit"
@@ -184,6 +182,7 @@
           <button class="project-close" title="Delete project" on:click={() => onDeleteProject(p)}>
             x
           </button>
+          <span class="project-count">{countFor(p.id)}</span>
         </div>
         {#if editingProjectId === p.id}
           <form class="new-project-form" on:submit|preventDefault={() => submitProject(p.id)}>
