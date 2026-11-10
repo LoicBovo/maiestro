@@ -45,8 +45,8 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
    below it. The 3rd column is the Open PRs pane (300px expanded, 30px
    collapsed rail). The main process resizes the window by the same difference
    (see PRS_PANE_DELTA in electron/main.ts). */
-.app { display: grid; grid-template-columns: 297px 1fr 300px; height: 100vh; }
-.app.prs-closed { grid-template-columns: 297px 1fr 30px; }
+.app { display: grid; grid-template-columns: 267px 1fr 300px; height: 100vh; }
+.app.prs-closed { grid-template-columns: 267px 1fr 30px; }
 
 /* ---- sidebar ---- */
 .sidebar { background: var(--bg-pane); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
@@ -72,7 +72,7 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 .project-item:hover .project-edit, .project-item:hover .project-close { visibility: visible; }
 .project-edit:hover, .project-close:hover { color: var(--text); }
 .project-item.editing .project-edit, .project-item.editing .project-close { visibility: visible; }
-.project-count { margin-left: auto; font-size: 11px; color: var(--text-faint); }
+.project-count { flex: none; font-size: 11px; color: var(--text-faint); padding-right: 5px; }
 .new-project-btn { width: 100%; margin-top: 6px; padding: 5px 6px; text-align: left; border-radius: 5px; color: var(--text-faint); font-size: 12px; }
 .new-project-btn:hover { color: var(--text); background: var(--bg-hover); }
 .new-project-form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding: 8px; background: var(--bg-raised); border: 1px solid var(--border); border-radius: 7px; }
