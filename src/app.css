@@ -45,8 +45,8 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
    below it. The 3rd column is the Open PRs pane (300px expanded, 30px
    collapsed rail). The main process resizes the window by the same difference
    (see PRS_PANE_DELTA in electron/main.ts). */
-.app { display: grid; grid-template-columns: 330px 1fr 300px; height: 100vh; }
-.app.prs-closed { grid-template-columns: 330px 1fr 30px; }
+.app { display: grid; grid-template-columns: 297px 1fr 300px; height: 100vh; }
+.app.prs-closed { grid-template-columns: 297px 1fr 30px; }
 
 /* ---- sidebar ---- */
 .sidebar { background: var(--bg-pane); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
