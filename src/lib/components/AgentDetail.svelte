@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterUpdate } from 'svelte'
   import { api } from '../api'
-  import { projects, selectedEvents } from '../state'
+  import { selectedEvents } from '../state'
   import type { Agent } from '../types'
   import StatusBadge from './StatusBadge.svelte'
   import TerminalPane from './TerminalPane.svelte'
@@ -23,11 +23,6 @@
   let renaming = false
   let renameValue = ''
   let renameEl: HTMLInputElement
-
-  $: projectName =
-    agent.projectId == null
-      ? 'solo'
-      : $projects.find((p) => p.id === agent.projectId)?.name ?? 'solo'
 
   // reset the resume form when the selected agent changes (not on every
   // agents:changed push, which would clobber an in-progress edit)
@@ -51,17 +46,6 @@
   function fmtTime(iso: string | null): string {
     if (!iso) return '—'
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  }
-
-  function fmtDuration(from: string, to: string | null): string {
-    const ms = new Date(to ?? Date.now()).getTime() - new Date(from).getTime()
-    if (ms < 1000) return ms + 'ms'
-    if (ms < 60_000) return (ms / 1000).toFixed(1) + 's'
-    return Math.floor(ms / 60_000) + 'm ' + Math.round((ms % 60_000) / 1000) + 's'
-  }
-
-  function fmtCost(cost: number | null): string {
-    return cost == null ? '—' : '$' + cost.toFixed(4)
   }
 
   function safeJson(data: unknown): string {
@@ -163,17 +147,6 @@
     {#if !isShell}
       <StatusBadge status={agent.status} />
     {/if}
-  </div>
-
-  <div class="detail-meta">
-    <span>tool <b>{agent.tool}</b></span>
-    <span>project <b>{projectName}</b></span>
-    <span>started <b>{fmtTime(agent.startedAt)}</b></span>
-    {#if agent.endedAt}<span>ended <b>{fmtTime(agent.endedAt)}</b></span>{/if}
-    <span>duration <b>{fmtDuration(agent.startedAt, agent.endedAt)}</b></span>
-    <span>cost <b>{fmtCost(agent.costUsd)}</b></span>
-    {#if agent.pid}<span>pid <b>{agent.pid}</b></span>{/if}
-    <span>cwd <b class="cwd" title={agent.cwd}>{agent.cwd}</b></span>
   </div>
 
   {#if agent.options?.mode === 'terminal'}

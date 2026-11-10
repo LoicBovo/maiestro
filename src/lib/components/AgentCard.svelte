@@ -11,6 +11,9 @@
 
   $: shortTask = agent.task.length > 90 ? agent.task.slice(0, 87) + '…' : agent.task
   $: isShell = agent.tool === 'shell'
+  // the tile is identified by the last folder of its working directory
+  // (e.g. /Users/toto/info -> "info"), not by the agent's name
+  $: cwdFolder = agent.cwd.split('/').filter(Boolean).slice(-1)[0]
   // a shell pane is pinned to its project — the tag names it, not the branch
   $: tileLabel = isShell
     ? agent.projectId == null
@@ -38,8 +41,8 @@
       <button class="card-remove" title="Close agent (removes it from the console)" on:click|stopPropagation={() => dispatch('remove')}>x</button>
     {/if}
   </div>
-  {#if agent.name}
-    <div class="agent-name" title={agent.name}>{agent.name}</div>
+  {#if cwdFolder}
+    <div class="agent-name" title={agent.cwd}>{cwdFolder}</div>
   {/if}
   {#if agent.task}
     <div class="task-text" title={agent.task}>{shortTask}</div>

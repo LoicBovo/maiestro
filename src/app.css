@@ -132,9 +132,6 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 .rename-btn { flex: none; padding: 3px 10px; font-size: 12px; }
 .rename-form { flex: 1; display: flex; gap: 8px; min-width: 0; }
 .rename-form input { flex: 1; min-width: 0; }
-.detail-meta { padding: 10px 18px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--text-faint); font-size: 12px; }
-.detail-meta b { color: var(--text); font-weight: 600; }
-.detail-meta .cwd { word-break: break-all; }
 .detail-actions { padding: 10px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .detail-actions select, .detail-actions input { padding: 4px 8px; font-size: 12.5px; }
 .detail-actions input[type='number'] { width: 70px; }
