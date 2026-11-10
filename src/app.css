@@ -92,9 +92,6 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 
 /* ---- workers (agent list, merged into the sidebar) ---- */
 .list-pane { border-top: 1px solid var(--border); flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg); }
-.filter-bar { display: flex; align-items: center; gap: 8px; padding: 8px 6px 6px; border-bottom: 1px solid var(--border); }
-.filter-bar .count { margin-right: auto; color: var(--text-faint); font-size: 12px; }
-.filter-bar select { padding: 4px 8px; font-size: 12.5px; }
 .agent-list { flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 6px; }
 
 .agent-card { text-align: left; background: var(--bg-pane); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; width: 100%; cursor: pointer; }
