@@ -3,7 +3,6 @@
   import { api } from './lib/api'
   import AgentCard from './lib/components/AgentCard.svelte'
   import AgentDetail from './lib/components/AgentDetail.svelte'
-  import FilterBar from './lib/components/FilterBar.svelte'
   import PullRequestsPane from './lib/components/PullRequestsPane.svelte'
   import SpawnDialog from './lib/components/SpawnDialog.svelte'
   import logo from './assets/logo.png'
@@ -305,7 +304,6 @@
 
     <main class="list-pane">
       <div class="workers-label">Workers</div>
-      <FilterBar />
       <div class="agent-list">
         {#each $visibleAgents as agent (agent.id)}
           <AgentCard
