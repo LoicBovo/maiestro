@@ -4,4 +4,4 @@
   export let status: AgentStatus
 </script>
 
-<span class="badge badge-{status}"><span class="dot"></span>{status}</span>
+<span class="badge badge-{status}" title={status}><span class="dot"></span></span>
