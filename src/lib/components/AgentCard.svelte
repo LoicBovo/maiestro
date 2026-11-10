@@ -44,7 +44,4 @@
   {#if agent.task}
     <div class="task-text" title={agent.task}>{shortTask}</div>
   {/if}
-  {#if agent.lastMessage}
-    <div class="last-msg">{agent.lastMessage}</div>
-  {/if}
 </div>
