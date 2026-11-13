@@ -133,16 +133,18 @@
         <button type="button" class="btn" on:click={() => (renaming = false)}>Cancel</button>
       </form>
     {:else}
-      <h2 title={agent.task}>{agent.name ?? agent.task}</h2>
-      {#if !isShell}
-        <button
-          class="btn rename-btn"
-          title={agent.name ? 'Rename agent' : 'Give this agent a name'}
-          on:click={startRename}
-        >
-          {agent.name ? 'Rename' : 'Name'}
-        </button>
-      {/if}
+      <h2 title={agent.task}>
+        <span class="agent-name">{agent.name ?? agent.task}</span>
+        {#if !isShell}
+          <button
+            class="btn rename-btn"
+            title={agent.name ? 'Rename agent' : 'Give this agent a name'}
+            on:click={startRename}
+          >
+            {agent.name ? 'Rename' : 'Name'}
+          </button>
+        {/if}
+      </h2>
     {/if}
     {#if !isShell}
       <StatusBadge status={agent.status} />
