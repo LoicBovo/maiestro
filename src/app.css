@@ -127,9 +127,11 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 /* ---- detail pane ---- */
 .detail-pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--bg); }
 .detail-inner { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.detail-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
-.detail-header h2 { font-size: 14.5px; font-weight: 600; flex: 1; word-break: break-word; }
-.rename-btn { flex: none; padding: 3px 10px; font-size: 12px; }
+.detail-header { padding: 4px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.detail-header h2 { font-size: 12.5px; font-weight: 600; flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.detail-header h2 .agent-name { min-width: 0; word-break: break-word; }
+.rename-btn { flex: none; padding: 0 7px; font-size: 10.5px; line-height: 1.2; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.detail-header h2:hover .rename-btn { opacity: 1; pointer-events: auto; }
 .rename-form { flex: 1; display: flex; gap: 8px; min-width: 0; }
 .rename-form input { flex: 1; min-width: 0; }
 .detail-actions { padding: 10px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
